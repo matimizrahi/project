@@ -14,7 +14,9 @@ printTable = False
 afterLogin = False
 newUser = False
 check_count = 0
-need_to_pick_new_name = False
+need_to_pick_new_name = False  # if a client choses a taken name he needs to choose a diffetent name, only relevent
+# once after the name is taken(otherwise it loops)
+
 userName = ''
 
 
@@ -33,7 +35,7 @@ def sqlCreateUserTable():
 
 
 def check_user(userN, passW):
-    conn = sqlite3.connect('user.db')
+    conn = sqlite3.connect('users.db')
     print("Opened database successfully")
     exists = False
     cursor = conn.execute("SELECT * from users")
@@ -64,6 +66,7 @@ def userN_exists(name):
 def server_recv():
     global flag
     global newUser
+    global userName
     port = 8820
     print("server recv start")
     server_socket = socket()
@@ -123,34 +126,34 @@ def server_recv():
         check_count = check_count + 1
         if newUser and check_count == 1:
             print("newUserChe")
-            newUserN = client_info_str
-            if userN_exists(newUserN):  # user name exists, the client needs to pick a different name
+            userName = client_info_str
+            if userN_exists(userName):  # user name exists, the client needs to pick a different name
+                check_count = 0
                 global need_to_pick_new_name
                 need_to_pick_new_name = True
-                print('in exists')
-            print('out of exist')
-            check_count = check_count + 1
+
         elif newUser and check_count == 2:
             newUserPass = client_info_str
-            print(newUserN + 'new username')
-            add = [(newUserN, newUserPass)]
+            print(userName + 'new username')
+            add = [(userName, newUserPass)]
             conn = sqlite3.connect('users.db')
 
-            add = [(newUserN, newUserPass)]
+            add = [(userName, newUserPass)]
             conn.executemany('INSERT INTO  users (username, password) VALUES (?,?)', add)
 
             print("Records for users created successfully");
 
             conn.commit()
             conn.close()
-
-        if check_count == 1 and not newUser:
-            userN = client_info_str
+            conn_q.put("isUser")
+        elif check_count == 1 and not newUser:
+            print("usern not new")
+            userName = client_info_str
         elif check_count == 2:
-            print(userN)
+            print("pass not new")
             passW = client_info_str
             global isUser
-            isUser = check_user(userN, passW)
+            isUser = check_user(userName, passW)
             global afterLogin
             afterLogin = True
 
@@ -179,7 +182,7 @@ class App(Thread):
         self.gettext.pack()
         sframe = Frame(frame)
         sframe.pack(anchor='w')
-        self.pro = Label(sframe, text="Server>>");
+        self.pro = Label(sframe, text="")
         self.sendtext = Entry(sframe, width=15)
         self.sendtext.focus_set()
         self.sendtext.bind(sequence="<Return>", func=self.Send)
@@ -202,9 +205,13 @@ class App(Thread):
 
     def run(self):
         loggedIn = False
+        global need_to_pick_new_name
         global check_count
         while 1:
             global afterLogin
+            if need_to_pick_new_name:
+                conn_q.put('you chose a name that was already taken, please choose a new name')
+                need_to_pick_new_name = False
             if not loggedIn:
                 if newUser:
                     self.getInfo()

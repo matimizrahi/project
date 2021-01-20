@@ -16,7 +16,6 @@ rootSign = tk
 
 
 def open_cam():
-    print("connection to other video chat users")
     cap = cv2.VideoCapture(cv2.CAP_DSHOW)
     print("camara is opening")
     while True:
@@ -50,16 +49,7 @@ def login():
     rootLog.mainloop()
     print("login done")
 
-    afterLogin = tk.Tk()
-    frame = tk.Frame(afterLogin)
-    frame.pack()
-    button = tk.Button(frame, text="EXIT", fg="green", command=quit)
-    button.pack(side=tk.LEFT)
-    button = tk.Button(frame, text="view users", fg="black", command=view_users())
-    button.pack(side=tk.LEFT)
-    button = tk.Button(frame, text="connect me!", fg="black", command=connect())
-    button.pack(side=tk.LEFT)
-    afterLogin.mainloop()
+    afterLoginTK()
 
 
 def signup():
@@ -70,16 +60,19 @@ def signup():
     rootSign.title('sign up')
     app = SignUp(rootSign).start()
     rootSign.mainloop()
+    afterLoginTK()
 
+
+def afterLoginTK():
     afterLogin = tk.Tk()
     frame = tk.Frame(afterLogin)
     frame.pack()
-    button = tk.Button(frame, text="EXIT", fg="green", command=quit)
-    button.pack(side=tk.LEFT)
-    button = tk.Button(frame, text="view users", fg="black", command=view_users())
-    button.pack(side=tk.LEFT)
-    button = tk.Button(frame, text="connect me!", fg="black", command=connect())
-    button.pack(side=tk.LEFT)
+    button1 = tk.Button(frame, text="EXIT", fg="green", command=quit)
+    button1.pack(side=tk.LEFT)
+    button2 = tk.Button(frame, text="view users", fg="black", command=view_users())
+    button2.pack(side=tk.LEFT)
+    button3 = tk.Button(frame, text="connect me!", fg="black", command=connect())  # only opens camara
+    button3.pack(side=tk.LEFT)
     afterLogin.mainloop()
 
 
@@ -100,8 +93,7 @@ def client_recv(my_socket):
         print("4444", current_thread().name)
         gui_q.put(data)
         if data == "isUser":
-            print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-            isUser = True
+           isUser = True
     print("client_recv while done")
 
 
@@ -141,7 +133,7 @@ class SignUp(Thread):
         sframe = Frame(frame)
         sframe.pack(anchor='w')
         self.pro = Label(sframe, text="")
-        self.sendtext = Entry(sframe, width=80)
+        self.sendtext = Entry(sframe, width=50)
         self.sendtext.focus_set()
         self.sendtext.bind(sequence="<Return>", func=self.Send)
         self.pro.pack(side=LEFT)
@@ -162,11 +154,14 @@ class SignUp(Thread):
 
     def run(self):
         while True:
+            if isUser:
+                rootSign.destroy()
+                break
             if not gui_q.empty():
                 text = gui_q.get()
                 print("1111", current_thread().name)
                 self.gettext.configure(state='normal')
-                self.gettext.insert(END, 'Server >> %s\n' % text)
+                self.gettext.insert(END, '%s\n' % text)
                 self.gettext.configure(state='disabled')
                 self.gettext.see(END)
             sleep(0.05)  # sleep a little before check the queue again
@@ -182,7 +177,7 @@ class LogIn(Thread):
         Thread.__init__(self)
         frame = Frame(master)
         frame.pack()
-        self.gettext = ScrolledText(frame, height=30, width=100, background="light blue")
+        self.gettext = ScrolledText(frame, height=10, width=50, background="light gray")
         self.gettext.pack()
         conn_q.put("old")
         self.gettext.insert(END,
@@ -191,7 +186,7 @@ class LogIn(Thread):
         sframe = Frame(frame)
         sframe.pack(anchor='w')
         self.pro = Label(sframe, text="");
-        self.sendtext = Entry(sframe, width=80)
+        self.sendtext = Entry(sframe, width=50)
         self.sendtext.focus_set()
         self.sendtext.bind(sequence="<Return>", func=self.Send)
         self.pro.pack(side=LEFT)
@@ -234,12 +229,12 @@ def main():
     frame = tk.Frame(root)
     frame.pack()
 
-    button = tk.Button(frame, text="EXIT", fg="green", command=quit)
-    button.pack(side=tk.LEFT)
-    slogan = tk.Button(frame, text="log in", command=login)
-    slogan.pack(side=tk.LEFT)
-    slogan = tk.Button(frame, text="sign up", command=signup)
-    slogan.pack(side=tk.LEFT)
+    button1 = tk.Button(frame, text="EXIT", fg="green", command=quit)
+    button1.pack(side=tk.LEFT)
+    button2 = tk.Button(frame, text="log in", command=login)
+    button2.pack(side=tk.LEFT)
+    button3 = tk.Button(frame, text="sign up", command=signup)
+    button3.pack(side=tk.LEFT)
 
     root.mainloop()
 
