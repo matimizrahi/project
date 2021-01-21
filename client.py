@@ -13,6 +13,7 @@ isUser = False
 rootLog = Tk
 root = tk
 rootSign = tk
+afterLogin = tk
 
 
 def open_cam():
@@ -32,8 +33,13 @@ def open_cam():
 
 
 def view_users():
+    '''global afterLogin
+    afterLogin.destroy()
+    rootVU = Tk()
+    rootVU.title('view users')
+    app = LogIn(rootVU).start()
+    rootVU.mainloop()'''
     pass
-
 
 def connect():
     pass
@@ -126,14 +132,14 @@ class SignUp(Thread):
         frame = Frame(master)
         frame.pack()
         conn_q.put("new")
-        self.gettext = ScrolledText(frame, height=10, width=50, background="light green")
+        self.gettext = ScrolledText(frame, height=10, width=80, background="light green")
         self.gettext.pack()
         self.gettext.insert(END, 'enter your desired username:\n')
         self.gettext.configure(state='disabled')
         sframe = Frame(frame)
         sframe.pack(anchor='w')
         self.pro = Label(sframe, text="")
-        self.sendtext = Entry(sframe, width=50)
+        self.sendtext = Entry(sframe, width=80)
         self.sendtext.focus_set()
         self.sendtext.bind(sequence="<Return>", func=self.Send)
         self.pro.pack(side=LEFT)
@@ -151,6 +157,7 @@ class SignUp(Thread):
         self.sendtext.focus_set()
         self.gettext.configure(state='disabled')
         self.gettext.see(END)
+
 
     def run(self):
         while True:
@@ -177,7 +184,7 @@ class LogIn(Thread):
         Thread.__init__(self)
         frame = Frame(master)
         frame.pack()
-        self.gettext = ScrolledText(frame, height=10, width=50, background="light gray")
+        self.gettext = ScrolledText(frame, height=10, width=80, background="light gray")
         self.gettext.pack()
         conn_q.put("old")
         self.gettext.insert(END,
@@ -186,7 +193,7 @@ class LogIn(Thread):
         sframe = Frame(frame)
         sframe.pack(anchor='w')
         self.pro = Label(sframe, text="");
-        self.sendtext = Entry(sframe, width=50)
+        self.sendtext = Entry(sframe, width=80)
         self.sendtext.focus_set()
         self.sendtext.bind(sequence="<Return>", func=self.Send)
         self.pro.pack(side=LEFT)
@@ -204,7 +211,6 @@ class LogIn(Thread):
         self.sendtext.focus_set()
         self.gettext.configure(state='disabled')
         self.gettext.see(END)
-        print("send")
 
     def run(self):
         # global rootLog
@@ -216,11 +222,59 @@ class LogIn(Thread):
                 text = gui_q.get()
                 print("1111", current_thread().name)
                 self.gettext.configure(state='normal')
-                self.gettext.insert(END, 'Server >> %s\n' % text)
+                self.gettext.insert(END, '%s\n' % text)
                 self.gettext.configure(state='disabled')
                 self.gettext.see(END)
             sleep(0.05)  # sleep a little before check the queue again
-        print("run while done")
+
+
+class ViewUsers(Thread):
+
+    def __init__(self, master):
+
+        commThread = Thread(target=client_send, args=())
+        commThread.start()
+
+        Thread.__init__(self)
+        frame = Frame(master)
+        frame.pack()
+        self.gettext = ScrolledText(frame, height=30, width=50)
+        self.gettext.pack()
+        self.gettext.configure(state='disabled')
+        sframe = Frame(frame)
+        sframe.pack(anchor='w')
+        self.pro = Label(sframe, text="Client>>");
+        self.sendtext = Entry(sframe, width=80)
+        self.sendtext.focus_set()
+        self.sendtext.bind(sequence="<Return>", func=self.Send)
+        self.pro.pack(side=LEFT)
+        self.sendtext.pack(side=LEFT)
+
+    def Send(self, args):
+        print("2222", current_thread().name)
+        self.gettext.configure(state='normal')
+        text = self.sendtext.get()
+        if text == "": text = " "
+        self.gettext.insert(END, 'Me >> %s\n' % text)
+        self.sendtext.delete(0, END)
+        conn_q.put(text)
+
+        self.sendtext.focus_set()
+        self.gettext.configure(state='disabled')
+        self.gettext.see(END)
+        conn_q.put("send_users")
+
+    def run(self):
+        while True:
+            if not gui_q.empty():
+                text = gui_q.get()
+
+                print("1111", current_thread().name)
+                self.gettext.configure(state='normal')
+                self.gettext.insert(END, '%s\n' % text)
+                self.gettext.configure(state='disabled')
+                self.gettext.see(END)
+            sleep(0.05)  # sleep a little before check the queue again
 
 
 def main():

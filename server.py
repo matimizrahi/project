@@ -147,15 +147,15 @@ def server_recv():
             conn.close()
             conn_q.put("isUser")
         elif check_count == 1 and not newUser:
-            print("usern not new")
             userName = client_info_str
         elif check_count == 2:
-            print("pass not new")
             passW = client_info_str
             global isUser
             isUser = check_user(userName, passW)
             global afterLogin
             afterLogin = True
+        '''if client_info_str == "send_users":
+            send_users()'''
 
 
 def server_send(client_socket, client_address):
@@ -168,6 +168,21 @@ def server_send(client_socket, client_address):
             print("3333", current_thread().name)
             client_socket.sendall(data.encode('latin-1'))
         sleep(0.05)  # sleep a little before check the queue again
+
+
+def send_users():
+    conn = sqlite3.connect('users.db')
+    print("Opened database successfully")
+    exists = False
+    cursor = conn.execute("SELECT * from users")
+    conn_q.put('the users are:\n')
+    for row in cursor:
+        conn_q.put(row[0] + '\n-----------------------')
+
+    global printTable
+    printTable = True
+    print("Operation done successfully")
+    conn.close()
 
 
 class App(Thread):
@@ -214,7 +229,6 @@ class App(Thread):
                 need_to_pick_new_name = False
             if not loggedIn:
                 if newUser:
-                    self.getInfo()
                     loggedIn = True
                 elif isUser:
                     self.gettext.configure(state=NORMAL)
@@ -238,9 +252,6 @@ class App(Thread):
                 self.gettext.configure(state=DISABLED)
                 self.gettext.see(END)
             sleep(0.05)  # sleep a little before check the queue again
-
-    def getInfo(self):
-        pass
 
 
 def main():
