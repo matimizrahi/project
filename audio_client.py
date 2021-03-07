@@ -1,7 +1,7 @@
 import socket
 import pyaudio
 import wave
-from _thread import start_new_thread
+from thread import start_new_thread
 
 #import thread
 
