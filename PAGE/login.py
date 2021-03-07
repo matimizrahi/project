@@ -5,6 +5,8 @@
 #  in conjunction with Tcl version 8.6
 #    Feb 7, 2021 13:47:16 PM +0200  platform: Windows NT
 
+
+print("login")
 import sys
 
 try:
@@ -14,9 +16,11 @@ except ImportError:
 
 try:
     import ttk
+
     py3 = False
 except ImportError:
     import tkinter.ttk as ttk
+
     py3 = True
 
 import login_support
@@ -26,7 +30,7 @@ def vp_start_gui():
     '''Starting point when module is the main routine.'''
     global val, w, root
     root = tk.Tk()
-    top = Toplevel1 (root)
+    top = Toplevel1(root)
     login_support.init(root, top)
     root.mainloop()
 
@@ -38,10 +42,10 @@ def create_Toplevel1(rt, *args, **kwargs):
     '''Starting point when module is imported by another module.
        Correct form of call: 'create_Toplevel1(root, *args, **kwargs)' .'''
     global w, w_win, root
-    #rt = root
+    # rt = root
     root = rt
-    w = tk.Toplevel (root)
-    top = Toplevel1 (w)
+    w = tk.Toplevel(root)
+    top = Toplevel1(w)
     login_support.init(w, top, *args, **kwargs)
     return (w, top)
 
@@ -58,22 +62,22 @@ class Toplevel1:
            top is the toplevel containing window.'''
         _bgcolor = '#d9d9d9'  # X11 color: 'gray85'
         _fgcolor = '#000000'  # X11 color: 'black'
-        _compcolor = '#d9d9d9' # X11 color: 'gray85'
-        _ana1color = '#d9d9d9' # X11 color: 'gray85'
-        _ana2color = '#ececec' # Closest X11 color: 'gray92'
+        _compcolor = '#d9d9d9'  # X11 color: 'gray85'
+        _ana1color = '#d9d9d9'  # X11 color: 'gray85'
+        _ana2color = '#ececec'  # Closest X11 color: 'gray92'
         self.style = ttk.Style()
         if sys.platform == "win32":
             self.style.theme_use('winnative')
-        self.style.configure('.',background=_bgcolor)
-        self.style.configure('.',foreground=_fgcolor)
-        self.style.configure('.',font="TkDefaultFont")
-        self.style.map('.',background=
-            [('selected', _compcolor), ('active',_ana2color)])
+        self.style.configure('.', background=_bgcolor)
+        self.style.configure('.', foreground=_fgcolor)
+        self.style.configure('.', font="TkDefaultFont")
+        self.style.map('.', background=
+        [('selected', _compcolor), ('active', _ana2color)])
 
         top.geometry("600x450+660+210")
         top.minsize(120, 1)
         top.maxsize(1924, 1061)
-        top.resizable(1,  1)
+        top.resizable(1, 1)
         top.title("New Toplevel")
         top.configure(background="#d9d9d9")
         top.configure(highlightbackground="#d9d9d9")
@@ -93,7 +97,7 @@ class Toplevel1:
 
         self.LOGIN_MESS = tk.Message(top)
         self.LOGIN_MESS.place(relx=0.0, rely=0.111, relheight=0.233
-                , relwidth=0.998)
+                              , relwidth=0.998)
         self.LOGIN_MESS.configure(background="#ffcecf")
         self.LOGIN_MESS.configure(font="-family {Segoe UI} -size 24 -weight bold")
         self.LOGIN_MESS.configure(foreground="#000000")
@@ -104,7 +108,7 @@ class Toplevel1:
 
         self.Entry_USERNAME = tk.Entry(top)
         self.Entry_USERNAME.place(relx=0.517, rely=0.467, height=21
-                , relwidth=0.273)
+                                  , relwidth=0.273)
         self.Entry_USERNAME.configure(background="white")
         self.Entry_USERNAME.configure(disabledforeground="#a3a3a3")
         self.Entry_USERNAME.configure(font="TkFixedFont")
@@ -129,7 +133,7 @@ class Toplevel1:
 
         self.Entry_PASSWORD = tk.Entry(top)
         self.Entry_PASSWORD.place(relx=0.517, rely=0.644, height=21
-                , relwidth=0.273)
+                                  , relwidth=0.273)
         self.Entry_PASSWORD.configure(background="white")
         self.Entry_PASSWORD.configure(disabledforeground="#a3a3a3")
         self.Entry_PASSWORD.configure(font="TkFixedFont")
@@ -140,9 +144,8 @@ class Toplevel1:
         self.Entry_PASSWORD.configure(selectbackground="blue")
         self.Entry_PASSWORD.configure(selectforeground="white")
 
-
-        self.menubar = tk.Menu(top,font="TkMenuFont",bg=_bgcolor,fg=_fgcolor)
-        top.configure(menu = self.menubar)
+        self.menubar = tk.Menu(top, font="TkMenuFont", bg=_bgcolor, fg=_fgcolor)
+        top.configure(menu=self.menubar)
 
         self.CANCEL = ttk.Button(top)
         self.CANCEL.place(relx=0.183, rely=0.8, height=27, width=87)
@@ -164,6 +167,7 @@ class Toplevel1:
         self.LOGINBUTTON.configure(pady="0")
         self.LOGINBUTTON.configure(text='''log in''')
         self.LOGINBUTTON.configure(command=login_support.login_check)
+        self.LOGINBUTTON.bind('<Button-1>', lambda e: login_support.login_check(e))
 
         self.error_label = tk.Label(top)
         self.error_label.place(relx=0.083, rely=0.378, height=23, width=467)
@@ -177,10 +181,6 @@ class Toplevel1:
         self.error_label.configure(highlightcolor="black")
         self.error_label.configure(text="")
 
+
 if __name__ == '__main__':
     vp_start_gui()
-
-
-
-
-

@@ -6,6 +6,15 @@
 #    Feb 7, 2021 14:05:35 PM +0200  platform: Windows NT
 
 import sys
+from queue import Queue
+from threading import Thread
+from threading import *
+import sys
+from socket import *
+from time import sleep
+
+conn_q = Queue()
+gui_q = Queue()
 
 try:
     import Tkinter as tk
@@ -31,6 +40,8 @@ def init(top, gui, *args, **kwargs):
 
 def register():
     global w
+    messege = "new"
+    conn_q.put(messege.encode('latin-1'))
     print('signup_support.xxx')
     username = w.Entry_username.get()
     password = w.Entry_password.get()
@@ -39,11 +50,16 @@ def register():
     if username == "" or password == "" or username.isspace() is True or password.isspace() is True:
         src = w.error_label
         src.configure(text="Error: The details cannot be empty")
-    #import start_menu_support
-    #start_menu_support.check_sign_in(username, password)
-
-#    else:
-#       clientBL.register(fe_register_res, username, password)
+    else:
+        conn_q.put(username)
+        conn_q.put(password)
+        server_reply = gui_q.get().decode('latin-1')
+        while server_reply == "not valid":
+            src = w.error_label
+            src.configure(text="Error: this username is taken, try a new one")
+            conn_q.put(username)
+            conn_q.put(password)
+            server_reply = gui_q.get().decode('latin-1')
 
 
 def cancel_startMenu():
@@ -52,6 +68,46 @@ def cancel_startMenu():
     root.destroy()
     import start_menu
     start_menu.vp_start_gui()
+
+
+def client_recv(my_socket):
+    while True:
+        data = my_socket.recv(1024)
+        if data=="":
+            print("server close this socket")
+            my_socket.close()
+            break #get out from thread
+        data = data.decode('latin-1')
+        print ("client_recv:" + data )
+        print("4444",current_thread().name)
+        gui_q.put(data)
+
+
+def client_send():
+    print("start client")
+    my_socket = socket()
+    my_socket.connect(("127.0.0.1",8820))
+
+    recvThread = Thread(target=client_recv, args=(my_socket,))
+    recvThread.start()
+
+    while True:
+        if not conn_q.empty():
+            data = conn_q.get()
+            #print ("client_send:" + data)
+            print("3333", current_thread().name)
+            my_socket.sendall(data.encode('latin-1'))
+        sleep(0.05) #sleep a little before check the queue again
+
+
+def init(top, gui, *args, **kwargs):
+    global w, top_level, root
+    w = gui
+    top_level = top
+    root = top
+    commThread = Thread(target= client_send, args=())
+    commThread.start()
+    top.after(100, on_after_elapsed)
 
 
 def destroy_window():

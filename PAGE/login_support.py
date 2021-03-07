@@ -6,6 +6,15 @@
 #    Feb 7, 2021 13:47:12 PM +0200  platform: Windows NT
 
 import sys
+from queue import Queue
+from threading import Thread
+from threading import *
+import sys
+from socket import *
+from time import sleep
+
+conn_q = Queue()
+gui_q = Queue()
 
 try:
     import Tkinter as tk
@@ -28,22 +37,88 @@ def cancel_startMenu():
     start_menu.vp_start_gui()
 
 
+def client_recv(my_socket):
+    while True:
+        data = my_socket.recv(1024)
+        if data=="":
+            print("server close this socket")
+            my_socket.close()
+            break #get out from thread
+        data = data.decode('latin-1')
+        print ("client_recv:" + data )
+        print("4444",current_thread().name)
+        gui_q.put(data)
+
+
+def client_send():
+    print("start client")
+    my_socket = socket()
+    my_socket.connect(("127.0.0.1",8820))
+
+    recvThread = Thread(target=client_recv, args=(my_socket,))
+    recvThread.start()
+
+    while True:
+        if not conn_q.empty():
+            data = conn_q.get()
+            #print ("client_send:" + data)
+            print("3333", current_thread().name)
+            my_socket.sendall(data.encode('latin-1'))
+        sleep(0.05) #sleep a little before check the queue again
+
+
 def init(top, gui, *args, **kwargs):
     global w, top_level, root
     w = gui
     top_level = top
     root = top
+    commThread = Thread(target= client_send, args=())
+    commThread.start()
+    top.after(100, on_after_elapsed)
 
+def on_after_elapsed():
+    """
+    while True:
+        try:
+            v = dataQ.get(timeout=0.1)
+        except:
+            break
+        scrText.insert(TkConst.END, "value=%d\n" % v)
+        scrText.see(TkConst.END)
+        scrText.update()
+    """
+    global w, top_level
+    #print('gui_chat_support.send_message')
+    #print("111")
+    if gui_q.empty() == False:
+            text = gui_q.get()
+            to = w.Scrolledtext1
+            to = w.Scrolledtext1
+            to.insert(END,text)
+    top_level.after(1000, on_after_elapsed)
 
-def login_check():
+def login_check(p1):
     global w
-    print('signup_support.xxx')
+    messege = "old"
+    conn_q.put(messege.encode('latin-1'))
+    print('login_support.xxx')
     username = w.Entry_USERNAME.get()
     password = w.Entry_USERNAME.get()
     print(username + " " + password)
     if username == "" or password == "" or username.isspace() is True or password.isspace() is True:
         src = w.error_label
         src.configure(text="Error: The details cannot be empty")
+    else:
+        conn_q.put(username)
+        conn_q.put(password)
+        server_reply = gui_q.get()
+        while server_reply.decode('latin-1') == "not valid":
+            src = w.error_label
+            src.configure(text="Error: The details are not valid, check your username and password and try again")
+            conn_q.put(username)
+            conn_q.put(password)
+            server_reply = gui_q.get()
+
 
 
 def destroy_window():
