@@ -23,4 +23,4 @@ def center_window(root, width=800, height=550):
 
 
 if __name__ == '__main__':
-    pop_up_message('hi')
+    pop_up_message('')

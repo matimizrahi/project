@@ -4,8 +4,8 @@ from threading import Thread, enumerate, active_count
 import time
 from winsound import PlaySound, SND_LOOP, SND_ASYNC, SND_PURGE
 from client_pack.gui_methods import center_window, pop_up_message
-from client_pack import ask_server
-from client_pack.chat_client import ChatClient
+from client_pack import clients_server
+from client_pack.audio_client import Audio
 
 
 # creates the pages and shows them
@@ -13,7 +13,7 @@ class App(Tk):
 
     def __init__(self, *args, **kwargs):
         Tk.__init__(self, *args, **kwargs)
-        self.title('VoiceChat')
+        self.title('computer call')
         # Setup Frame
         self.container = Frame(self)
         self.container.pack(side="top", fill="both", expand=True)
@@ -37,7 +37,7 @@ class App(Tk):
         self.deiconify()
 
     def create_frames(self):
-        for F in (StartPage, Login, Register, Main, Ringing, Dialing, Chat):
+        for F in (StartPage, Login, Register, Main, Ringing, Dialing, Call):
             frame = F(self.container, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
@@ -54,32 +54,32 @@ class App(Tk):
         self.after(wait, self.threading_state)
 
 
-# chat page
-class Chat(Frame):
+# call page
+class Call(Frame):
     def __init__(self, master, controller):
         super().__init__(master)
         self.controller = controller
         self.msg = Label(self, font=('Ariel', 20), foreground='green')
         self.msg.pack()
-        Button(self, text='End Chat', command=self.stop_chat).pack()
+        Button(self, text='end call', command=self.stop_call).pack()
 
-    def stop_chat(self):
-        ask_server.stop(self.controller.username, 'call')
+    def stop_call(self):
+        clients_server.stop(self.controller.username, 'call')
 
-    def start_chat(self):
+    def start_call(self):
         user = self.controller.target
         if not user:
             user = self.controller.user_called
-        self.msg['text'] = f'In chat with {user}'
-        self.client = ChatClient()
-        Thread(target=self.chat_ended, name='chat_ended', daemon=True).start()
+        self.msg['text'] = f'In a call with {user}'
+        self.client = Audio()
+        Thread(target=self.call_ended, name='call_ended', daemon=True).start()
         self.client.start()
 
-    def chat_ended(self):
+    def call_ended(self):
         time.sleep(2)
         while True:
             time.sleep(1)
-            if not ask_server.is_in_chat(self.controller.username):
+            if not clients_server.is_in_call(self.controller.username):
                 self.client.end()
                 self.controller.show_frame(Main)
                 time.sleep(0.4)
@@ -87,7 +87,7 @@ class Chat(Frame):
                 break
 
 
-# receiving or making a call page
+# main page- after login
 class Main(Frame):
     def __init__(self, master, controller):
         super().__init__(master)
@@ -110,7 +110,7 @@ class Main(Frame):
     # create list of users
     def set_users_list(self):
         self.users.delete(0, END)
-        users = ask_server.user_lists()
+        users = clients_server.user_lists()
         for user in users:
             if user != self.controller.username:
                 self.users.insert(END, user)
@@ -130,7 +130,7 @@ class Main(Frame):
         target = self.target_name.get()
         self.target_name.delete(0, END)
         if len(target) > 2 and target != self.controller.username:
-            if ask_server.is_user(target):  # checks if the user exists
+            if clients_server.is_user(target):  # checks if the user exists
                 self.controller.target = target
                 self.controller.show_frame(Ringing)
                 self.controller.frames[Ringing].call()
@@ -162,7 +162,7 @@ class Ringing(Frame):
 
     # cancels call
     def stop_calling(self):
-        ask_server.stop(self.controller.username, 'ringing')
+        clients_server.stop(self.controller.username, 'ringing')
         self.cancel = True
 
     # checks if target agreed to chat
@@ -179,10 +179,10 @@ class Ringing(Frame):
             if time.time() > max_time:
                 result = 'timed_out'
                 break
-            if ask_server.is_in_chat(self.controller.username):
+            if clients_server.is_in_call(self.controller.username):
                 result = 'accepted'
                 break
-            if not ask_server.not_rejected(self.controller.username, self.controller.target):
+            if not clients_server.not_rejected(self.controller.username, self.controller.target):
                 result = 'rejected'
                 break
         PlaySound(None, SND_PURGE)
@@ -190,14 +190,14 @@ class Ringing(Frame):
 
     # calls and handle the call
     def ringing(self):
-        is_posted = ask_server.call(self.controller.username, self.controller.target)
+        is_posted = clients_server.call(self.controller.username, self.controller.target)
         if is_posted:
             # print('call posted')
             result = self.answer(1)
             if result == 'accepted':
                 # print('call accepted')
-                self.controller.show_frame(Chat)
-                self.controller.frames[Chat].start_chat()
+                self.controller.show_frame(Call)
+                self.controller.frames[Call].start_call()
             else:
                 self.controller.show_frame(Main)
                 if result == 'timed_out':  # waited too long for response from the call target
@@ -211,14 +211,13 @@ class Ringing(Frame):
 
         else:  # error, call already exists, handling
             # print('error')
-            ask_server.stop(self.controller.username, 'ringing')
+            clients_server.stop(self.controller.username, 'ringing')
             self.ringing()
 
 
 # receiving a call page
 class Dialing(Frame):
     sound = r"..\media\called_ring.wav"
-    #sound = r"C:\PycharmProjects\project\zoom\media\dialing.mp3"
 
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -238,36 +237,36 @@ class Dialing(Frame):
     def dialing(self):
         # print(f'hi {self.controller.username}, waiting for a call')
         while True:
-            if ask_server.look_for_call(self.controller.username):
+            if clients_server.look_for_call(self.controller.username):
                 self.controller.show_frame(Dialing)
-                user = ask_server.get_src_name(self.controller.username)
+                user = clients_server.get_src_name(self.controller.username)
                 self.controller.user_called = user
                 # print(f'{user} dialing')
                 self.text1['text'] = f'you got a call from {user}\ndo you want to answer'
                 PlaySound(Dialing.sound, SND_LOOP + SND_ASYNC)
                 break
-            if ask_server.is_in_chat(self.controller.username):  # when ringing and call was approved
+            if clients_server.is_in_call(self.controller.username):  # when ringing and call was approved
                 break
             time.sleep(1)
 
     def yes(self):
         PlaySound(None, SND_PURGE)
-        successful = ask_server.accept(self.controller.user_called, self.controller.username)
+        successful = clients_server.accept(self.controller.user_called, self.controller.username)
         if successful == 'True':
             time.sleep(0.5)
-            self.controller.show_frame(Chat)
-            self.controller.frames[Chat].start_chat()
+            self.controller.show_frame(Call)
+            self.controller.frames[Call].start_call()
         else:
             pop_up_message('call was canceled')
             # print('call was canceled')
-            ask_server.stop(self.controller.username, 'ringing')
+            clients_server.stop(self.controller.username, 'ringing')
             self.controller.show_frame(Main)
             self.start_checking()
 
     def no(self):
         """ is this how i wanna handle that? the caller doesn't check if we canceled"""
         PlaySound(None, SND_PURGE)
-        ask_server.stop(self.controller.username, 'ringing')
+        clients_server.stop(self.controller.username, 'ringing')
         self.controller.show_frame(Main)
         self.start_checking()
 
@@ -278,7 +277,7 @@ class StartPage(Frame):
         super().__init__(parent)
         background_label = Label(self)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
-        Label(self, text='Welcome to VOICECHAT, please log in to continue',
+        Label(self, text='Welcome to my program! log in to continue',
               font=('Ariel', 18), foreground='black').pack(padx=5, pady=5)
         Button(self, text='login', command=lambda: controller.show_frame(Login)).pack()
         Label(self, text='Not registered yet? Do it now',
@@ -293,21 +292,25 @@ class Login(Frame):
         self.controller = controller
         # Label(self, text='Login', font=('Ariel', 20), foreground='orange').grid()
         self.entry_name = Entry(self)
-        self.entry_pas = Entry(self, show='*')
+        self.entry_passW = Entry(self, show='*')
+        self.entry_email = Entry(self)
         name = Label(self, text='Name')
-        pas = Label(self, text='Password')
+        passW = Label(self, text='Password')
+        email = Label(self, text='email')
         enter = Button(self, text='Enter', command=self.collect)
         self.bind('<Return>', self.collect)
         self.entry_name.focus_set()
         # grid & pack
         name.grid(row=0, sticky=E)
-        pas.grid(row=1, sticky=E)
+        passW.grid(row=1, sticky=E)
+        email.grid(row=2, sticky=E)
         self.entry_name.grid(row=0, column=1)
-        self.entry_pas.grid(row=1, column=1)
+        self.entry_passW.grid(row=1, column=1)
+        self.entry_email.grid(row=2, column=1)
         enter.grid()
 
-    def enter(self, name, pas):
-        is_connected = ask_server.login(name, pas)
+    def enter(self, name, passW, email):
+        is_connected = clients_server.login(name, passW, email)
         if is_connected:
             self.controller.username = name
             pop_up_message(f"you're in, {name}")
@@ -316,13 +319,15 @@ class Login(Frame):
             self.controller.frames[Dialing].start_checking()
         else:
             self.entry_name.delete(0, END)
-            self.entry_pas.delete(0, END)
-            pop_up_message("name or password is incorrect")
+            self.entry_passW.delete(0, END)
+            self.entry_email.delete(0, END)
+            pop_up_message("name, password or email is incorrect")
 
     def collect(self):
         name = self.entry_name.get()
-        pas = self.entry_pas.get()
-        self.enter(name, pas)
+        passW = self.entry_passW.get()
+        email = self.entry_email.get()
+        self.enter(name, passW, email)
 
 
 # register page
@@ -333,34 +338,40 @@ class Register(Frame):
         # Label(self, text='Register', font=('Ariel', 20), foreground='blue').grid()
         self.entry_name = Entry(self)
         self.entry_password = Entry(self)
+        self.entry_email = Entry(self)
         name = Label(self, text='Name')
-        pas = Label(self, text='Password')
+        passW = Label(self, text='Password')
+        email = Label(self, text='email')
         enter = Button(self, text='Register', command=self.handle)
         self.bind('<Return>', self.handle)
         self.entry_name.focus_set()
 
         # grid & pack
         name.grid(row=0, sticky=E)
-        pas.grid(row=1, sticky=E)
+        passW.grid(row=1, sticky=E)
+        email.grid(row=2, sticky=E)
         self.entry_name.grid(row=0, column=1)
         self.entry_password.grid(row=1, column=1)
+        self.entry_email.grid(row=2, column=1)
         enter.grid()
 
     def handle(self, event=None):
         # acquire args
         name = self.entry_name.get()
-        pas = self.entry_password.get()
+        passW = self.entry_password.get()
+        email = self.entry_email.get()
         self.entry_name.delete(0, END)
         self.entry_password.delete(0, END)
+        self.entry_email.delete(0, END)
         # checks if valid
-        if len(name) < 3 or len(pas) < 3:
-            pop_up_message('name and password must be at least 3 characters')
+        if len(name) < 3 or len(passW) < 3 or str(email[-10:]) != "@gmail.com":
+            pop_up_message('name and password must be at least 3 characters and email address must end with @gmail.com')
         # add to database unless name is already used
         else:
-            success = ask_server.register(name, pas)
+            success = clients_server.register(name, passW, email)
             if success:
                 # pop_up_message('added to database')
-                self.controller.frames[Login].enter(name, pas)
+                self.controller.frames[Login].enter(name, passW, email)
             else:
                 pop_up_message('username already used')
 
