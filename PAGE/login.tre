@@ -1,9 +1,0 @@
-PAGE
-    Toplevel: New_Toplevel
-        Label: Label1  
-        Message: LOGIN_MESS  
-        Entry: Entry1  
-        Label: Labe  
-        Entry: Entry1_1  
-        Menu Bar
-
