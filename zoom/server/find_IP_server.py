@@ -3,6 +3,8 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 import netifaces
+
+
 # השרת ניגש למאגר המידע, שולף את המידע הרלוונטי ומחזיר למשתמש
 
 # finds server's IP address and returns it
@@ -56,6 +58,25 @@ user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
 
+class Active_Users(db.Model):
+    __table_name__ = 'Active'
+    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
+    name = db.Column(db.String(32), unique=True, nullable=False)  # can't have the same username therefore it's unique
+    ip = db.Column(db.String(32), nullable=False)
+
+    def __repr__(self):
+        return f"User('{self.id}', '{self.name}', '{self.ip}')"  # omit password
+
+
+class UserSchema(ma.Schema):
+    class Meta:
+        fields = ('name', 'ip')
+
+
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
+
+
 class Call(db.Model):  # call other side
     __table_name__ = 'Call'
     id = db.Column(db.Integer, primary_key=True, autoincrement=True)
@@ -67,7 +88,8 @@ class Call(db.Model):  # call other side
         return f"User('{self.id}', '{self.src}', '{self.operation}', '{self.dst}')"
         #   return 'id:{} src:{} operation:{} dst:{}'.format(self.id, self.src, self.operation, self.dst)
 
-# db.create_all() #to create the tables
+
+#   db.create_all() #to create the tables
 
 
 class CallSchema(ma.Schema):
@@ -83,6 +105,14 @@ calls_schema = CallSchema(many=True)
 def user_list():
     if request.method == 'GET':
         results = db.session.query(User.name).all()
+        user_names = [u.name for u in results]
+        return jsonify(user_names)
+
+
+@app.route('/active_user_list')
+def active_user_list():
+    if request.method == 'GET':
+        results = db.session.query(Active_Users.name).all()
         user_names = [u.name for u in results]
         return jsonify(user_names)
 
@@ -104,10 +134,9 @@ def login():
     if request.method == 'GET':
         user_name = request.form.get("name")
         password = request.form.get("password")
-        email = request.form.get("email")
 
         result = 'False'
-        user_info = User.query.filter_by(name=user_name, password=password, email=email).first()
+        user_info = User.query.filter_by(name=user_name, password=password).first()
         if user_info:
             # print(user_info.name, user_info.ip)
             result = "True"

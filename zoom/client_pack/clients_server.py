@@ -28,12 +28,14 @@ def user_lists():
     r = requests.get(MAIN_SERVER_URL + '/user_list')
     return r.json()  # r.status_code
 
+
 '''
 # registered users
 def active_user_lists():
     r = requests.get(MAIN_SERVER_URL + '/active_user_list')
     return r.json()  # r.status_code
 '''
+
 
 # returns ip or 0 if user doesnt exist
 def get_user_ip(name):

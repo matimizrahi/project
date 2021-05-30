@@ -1,5 +1,6 @@
 import socket
 import select
+import time
 
 """connects clients to server"""
 
@@ -33,7 +34,7 @@ class ChatServer:
                     (new_socket, address) = self.chat_server_socket.accept()
                     self.CONNECTION_LIST.append(new_socket)
                     self.addresses[new_socket] = address
-                    print("%s connected to the server" % str(address))
+                    print(time.strftime("%H:%M:%S", time.localtime()), "%s connected to the server" % str(address))
                 else:
                     try:
                         data = current_socket.recv(1024)

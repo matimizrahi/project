@@ -62,6 +62,8 @@ class Call(Frame):
         super().__init__(master)
         self.client = Audio()
         self.controller = controller
+        background_label = Label(self, image=controller.sp_background)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.msg = Label(self, font=('Ariel', 20), foreground='green')
         self.msg.pack()
         Button(self, text='end call', command=self.stop_call).pack()
@@ -93,17 +95,21 @@ class Call(Frame):
 class Main(Frame):
     def __init__(self, master, controller):
         super().__init__(master)
-        self.users = Listbox(self, fg='green', font=('Ariel', 12))
+        background_label = Label(self, image=controller.sp_background)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
+        self.users = Listbox(self, fg='black', font=('Ariel', 12))
         self.target_name = Entry(self, font=('Ariel', 12))
         self.controller = controller
         self.set()
         self.set_users_list()
+        self.users.place(x=50, y=90)
+        self.target_name.place(x=470, y=230)
 
     def set(self):
-        Label(self, text='Call to', font=('Ariel', 20), foreground='magenta').pack(side=TOP)
+        Label(self, text='Call to', font=('Ariel', 20), foreground='black').place(x=520, y=170)
         self.target_name.pack()
-        Button(self, text='Call', command=self.pre_call).pack()
-        Label(self, text='Users', font=('Ariel', 18), foreground='blue').pack()
+        Button(self, text='Call', command=self.pre_call).place(x=520, y=280)
+        Label(self, text='Users', font=('Ariel', 18), foreground='black').place(x=100, y=50)
         self.users.pack()
         self.users.bind('<<ListboxSelect>>', self.to_entry)
         self.bind('<Return>', self.pre_call)
@@ -177,6 +183,8 @@ class Ringing(Frame):
         super().__init__(master)
         self.controller = controller
         self.cancel = False
+        background_label = Label(self, image=controller.sp_background)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.label = Label(self, font=('Ariel', 20), foreground='magenta')
         self.label.pack()
         Button(self, text='Cancel Call', command=self.stop_calling).pack()
@@ -247,8 +255,10 @@ class Dialing(Frame):
 
     def __init__(self, parent, controller):
         super().__init__(parent)
-        self.controller = controller
 
+        self.controller = controller
+        background_label = Label(self, image=controller.sp_background)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.text1 = Label(self, font=('Ariel', 20), foreground='magenta')
         self.text1.pack()
         self.bind('<Return>', self.yes)
@@ -342,11 +352,14 @@ class Login(Frame):
         cancel.grid()
         cancel.place(x=330, y=450)
 
-    def enter(self, name, passW):
+    def enter(self, name, passW, is_login):
         is_connected = clients_server.login(name, passW)
         if is_connected:
             self.controller.username = name
-            pop_up_message(f"you're in, {name}")
+            if is_login:
+                pop_up_message(f"welcome back, {name}")
+            else:
+                pop_up_message(f"welcome, {name}")
             self.controller.create_frames()
             self.controller.show_frame(Main)
             self.controller.frames[Dialing].start_checking()
@@ -358,7 +371,7 @@ class Login(Frame):
     def collect(self):
         name = self.entry_name.get()
         passW = self.entry_passW.get()
-        self.enter(name, passW)
+        self.enter(name, passW, True)
 
     def cancel(self):
         self.controller.show_frame(StartPage)
@@ -381,10 +394,9 @@ class Register(Frame):
         passW = Label(self, text='Password', font="-family {Segoe UI} -size 12")
         email = Label(self, text='email', font="-family {Segoe UI} -size 12")
         enter = Button(self, text='Register', command=self.handle)
-        cancel = Button(self, text='Cancel', command=self.cancel)
+        cancel = Button(self, text='Cancel', command=self.controller.frames[Login].cancel)
         self.bind('<Return>', self.handle)
         self.entry_name.focus_set()
-
         # grid & pack
         name.grid(row=0, sticky=E)
         name.place(x=300, y=258)
@@ -404,8 +416,8 @@ class Register(Frame):
         cancel.grid()
         cancel.place(x=330, y=450)
 
+    #   checks if yhe entered values are valid and calls for clients_server.register to enter into the database
     def handle(self, event=None):
-        # acquire args
         name = self.entry_name.get()
         passW = self.entry_password.get()
         email = self.entry_email.get()
@@ -420,12 +432,10 @@ class Register(Frame):
             success = clients_server.register(name, passW, email)
             if success:
                 # pop_up_message('added to database')
-                self.controller.frames[Login].enter(name, passW, email)
+                self.controller.frames[Login].enter(name, passW, False)
             else:
                 pop_up_message('username already used')
 
-    def cancel(self):
-        self.controller.show_frame(StartPage)
 
 
 if __name__ == '__main__':
