@@ -107,6 +107,7 @@ class Main(Frame):
         self.bind('<Return>', self.pre_call)
         self.target_name.focus_set()
 
+
     # create list of users
     def set_users_list(self):
         self.users.delete(0, END)
@@ -124,8 +125,9 @@ class Main(Frame):
         name = self.users.get(index)
         self.target_name.delete(0, END)
         self.target_name.insert(0, name)
-
     # checks if name valid, if so runs call
+
+
     def pre_call(self, event=None):
         target = self.target_name.get()
         self.target_name.delete(0, END)
@@ -141,6 +143,26 @@ class Main(Frame):
         else:
             pop_up_message("you can't call yourself")
 
+'''
+    # create list of users
+    def set_users_list(self):
+        self.active_users.delete(0, END)
+        users = clients_server.user_lists()
+        for user in users:
+            if user != self.controller.username:
+                self.active_users.insert(END, user)
+        if self.active_users.size() < 10:
+            self.active_users.configure(height=self.active_users.size())
+        self.after(5000, self.set_active_users_list)
+
+
+    # put a user in entry
+    def to_entry(self, event=None):
+        index = self.active_users.curselection()
+        name = self.active_users.get(index)
+        self.target_name.delete(0, END)
+        self.target_name.insert(0, name)
+'''
 
 # waiting for a call to be answered page
 class Ringing(Frame):
@@ -293,24 +315,20 @@ class Login(Frame):
         # Label(self, text='Login', font=('Ariel', 20), foreground='orange').grid()
         self.entry_name = Entry(self)
         self.entry_passW = Entry(self, show='*')
-        self.entry_email = Entry(self)
         name = Label(self, text='Name')
         passW = Label(self, text='Password')
-        email = Label(self, text='email')
         enter = Button(self, text='Enter', command=self.collect)
         self.bind('<Return>', self.collect)
         self.entry_name.focus_set()
         # grid & pack
         name.grid(row=0, sticky=E)
         passW.grid(row=1, sticky=E)
-        email.grid(row=2, sticky=E)
         self.entry_name.grid(row=0, column=1)
         self.entry_passW.grid(row=1, column=1)
-        self.entry_email.grid(row=2, column=1)
         enter.grid()
 
-    def enter(self, name, passW, email):
-        is_connected = clients_server.login(name, passW, email)
+    def enter(self, name, passW):
+        is_connected = clients_server.login(name, passW)
         if is_connected:
             self.controller.username = name
             pop_up_message(f"you're in, {name}")
@@ -320,14 +338,12 @@ class Login(Frame):
         else:
             self.entry_name.delete(0, END)
             self.entry_passW.delete(0, END)
-            self.entry_email.delete(0, END)
-            pop_up_message("name, password or email is incorrect")
+            pop_up_message("name or password is incorrect")
 
     def collect(self):
         name = self.entry_name.get()
         passW = self.entry_passW.get()
-        email = self.entry_email.get()
-        self.enter(name, passW, email)
+        self.enter(name, passW)
 
 
 # register page
