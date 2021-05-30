@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import ttk
 from tkinter.ttk import *
 from threading import Thread, enumerate, active_count
 import time
@@ -10,6 +11,7 @@ from client_pack.audio_client import Audio
 
 # creates the pages and shows them
 class App(Tk):
+    background = r"..\media\background.png"
 
     def __init__(self, *args, **kwargs):
         Tk.__init__(self, *args, **kwargs)
@@ -23,8 +25,8 @@ class App(Tk):
         self.username = ''
         self.target = ''
         self.user_called = ''
-
         self.frames = {}
+        self.sp_background = PhotoImage(file=App.background)
 
         # self.threading_state() # used for debugging
         self.create_frames()
@@ -58,6 +60,7 @@ class App(Tk):
 class Call(Frame):
     def __init__(self, master, controller):
         super().__init__(master)
+        self.client = Audio()
         self.controller = controller
         self.msg = Label(self, font=('Ariel', 20), foreground='green')
         self.msg.pack()
@@ -71,7 +74,6 @@ class Call(Frame):
         if not user:
             user = self.controller.user_called
         self.msg['text'] = f'In a call with {user}'
-        self.client = Audio()
         Thread(target=self.call_ended, name='call_ended', daemon=True).start()
         self.client.start()
 
@@ -107,7 +109,6 @@ class Main(Frame):
         self.bind('<Return>', self.pre_call)
         self.target_name.focus_set()
 
-
     # create list of users
     def set_users_list(self):
         self.users.delete(0, END)
@@ -125,8 +126,8 @@ class Main(Frame):
         name = self.users.get(index)
         self.target_name.delete(0, END)
         self.target_name.insert(0, name)
-    # checks if name valid, if so runs call
 
+    # checks if name valid, if so runs call
 
     def pre_call(self, event=None):
         target = self.target_name.get()
@@ -142,6 +143,7 @@ class Main(Frame):
             pop_up_message('sorry, the name is too short, at least 3 characters')
         else:
             pop_up_message("you can't call yourself")
+
 
 '''
     # create list of users
@@ -164,9 +166,11 @@ class Main(Frame):
         self.target_name.insert(0, name)
 '''
 
+
 # waiting for a call to be answered page
 class Ringing(Frame):
     ring = r"..\media\calling_ring.wav"
+
     # ring = r"C:\PycharmProjects\project\zoom\media\phone_ring.mp3"
 
     def __init__(self, master, controller):
@@ -297,35 +301,46 @@ class Dialing(Frame):
 class StartPage(Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        background_label = Label(self)
+        background_label = Label(self, image=controller.sp_background)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
-        Label(self, text='Welcome to my program! log in to continue',
-              font=('Ariel', 18), foreground='black').pack(padx=5, pady=5)
-        Button(self, text='login', command=lambda: controller.show_frame(Login)).pack()
-        Label(self, text='Not registered yet? Do it now',
-              font=('Ariel', 15), foreground='blue').pack(padx=5, pady=5)
-        Button(self, text='register', command=lambda: controller.show_frame(Register)).pack()
+        Label(self, text='Welcome to my program!',
+              font="-family {Segoe UI} -size 30 -weight bold", foreground='black').place(x=160, y=90)
+        Label(self, text='log in or sign up in order to continue',
+              font="-family {Segoe UI} -size 20", foreground='black').place(x=180, y=200)
+        Button(self, text='login', width=30, command=lambda: controller.show_frame(Login)).place(x=180, y=350)
+        Button(self, text='sign up',width=30, command=lambda: controller.show_frame(Register)).place(x=400, y=350)
 
 
 # login page
 class Login(Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
+        background_label = Label(self, image=controller.sp_background)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.controller = controller
-        # Label(self, text='Login', font=('Ariel', 20), foreground='orange').grid()
+        Label(self, text='this is the login page', font="-family {Segoe UI} -size 20 -weight bold", foreground='black').place(x=220, y=100)
+        Label(self, text='enter your username and password', font="-family {Segoe UI} -size 20", foreground='black').place(x=150, y=150)
         self.entry_name = Entry(self)
         self.entry_passW = Entry(self, show='*')
-        name = Label(self, text='Name')
-        passW = Label(self, text='Password')
+        name = Label(self, text='Name', font="-family {Segoe UI} -size 12")
+        passW = Label(self, text='Password', font="-family {Segoe UI} -size 12")
         enter = Button(self, text='Enter', command=self.collect)
+        cancel = Button(self, text='Cancel', command=self.cancel)
         self.bind('<Return>', self.collect)
         self.entry_name.focus_set()
         # grid & pack
         name.grid(row=0, sticky=E)
+        name.place(x=300, y=258)
         passW.grid(row=1, sticky=E)
+        passW.place(x=270, y=298)
         self.entry_name.grid(row=0, column=1)
+        self.entry_name.place(x=350, y=260)
         self.entry_passW.grid(row=1, column=1)
+        self.entry_passW.place(x=350, y=300)
         enter.grid()
+        enter.place(x=330, y=410)
+        cancel.grid()
+        cancel.place(x=330, y=450)
 
     def enter(self, name, passW):
         is_connected = clients_server.login(name, passW)
@@ -345,31 +360,49 @@ class Login(Frame):
         passW = self.entry_passW.get()
         self.enter(name, passW)
 
+    def cancel(self):
+        self.controller.show_frame(StartPage)
+
 
 # register page
 class Register(Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
+        background_label = Label(self, image=controller.sp_background)
+        background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.controller = controller
-        # Label(self, text='Register', font=('Ariel', 20), foreground='blue').grid()
+        Label(self, text='this is the registration page', font="-family {Segoe UI} -size 20 -weight bold", foreground='black').place(x=220, y=100)
+        Label(self, text='enter your desired username and password and enter your email',
+              font="-family {Segoe UI} -size 20", foreground='black').place(x=20, y=150)
         self.entry_name = Entry(self)
         self.entry_password = Entry(self)
         self.entry_email = Entry(self)
-        name = Label(self, text='Name')
-        passW = Label(self, text='Password')
-        email = Label(self, text='email')
+        name = Label(self, text='Name', font="-family {Segoe UI} -size 12")
+        passW = Label(self, text='Password', font="-family {Segoe UI} -size 12")
+        email = Label(self, text='email', font="-family {Segoe UI} -size 12")
         enter = Button(self, text='Register', command=self.handle)
+        cancel = Button(self, text='Cancel', command=self.cancel)
         self.bind('<Return>', self.handle)
         self.entry_name.focus_set()
 
         # grid & pack
         name.grid(row=0, sticky=E)
+        name.place(x=300, y=258)
         passW.grid(row=1, sticky=E)
+        passW.place(x=270, y=298)
         email.grid(row=2, sticky=E)
+        email.place(x=300, y=338)
         self.entry_name.grid(row=0, column=1)
+        self.entry_name.place(x=350, y=260)
         self.entry_password.grid(row=1, column=1)
+        self.entry_password.place(x=350, y=300)
         self.entry_email.grid(row=2, column=1)
+        self.entry_email.place(x=350, y=340)
         enter.grid()
+        enter.place(x=330, y=410)
+        enter.place(x=330, y=410)
+        cancel.grid()
+        cancel.place(x=330, y=450)
 
     def handle(self, event=None):
         # acquire args
@@ -390,6 +423,9 @@ class Register(Frame):
                 self.controller.frames[Login].enter(name, passW, email)
             else:
                 pop_up_message('username already used')
+
+    def cancel(self):
+        self.controller.show_frame(StartPage)
 
 
 if __name__ == '__main__':

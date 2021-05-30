@@ -1,7 +1,8 @@
 import requests
 import time
 
-HOST_IP = input('please enter host IP')
+HOST_IP = '10.0.0.31'
+#   HOST_IP = input('please enter host IP')
 MAIN_SERVER_IP = 5000
 MAIN_SERVER_URL = f'http://{HOST_IP}:{MAIN_SERVER_IP}'
 

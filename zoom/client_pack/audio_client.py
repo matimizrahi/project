@@ -26,8 +26,7 @@ class Audio:
 
     def conn(self, server_ip, server_port):
         self.s.connect((server_ip, server_port))
-
-        # print("Voice chat running")
+        print("voice call connected")
 
     def receive_data(self):
         while not self.stop:
