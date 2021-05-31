@@ -1,5 +1,4 @@
 from tkinter import *
-from tkinter import ttk
 from tkinter.ttk import *
 from threading import Thread, enumerate, active_count
 import time
@@ -435,7 +434,6 @@ class Register(Frame):
                 self.controller.frames[Login].enter(name, passW, False)
             else:
                 pop_up_message('username already used')
-
 
 
 if __name__ == '__main__':
