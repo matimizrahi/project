@@ -59,11 +59,10 @@ class App(Tk):
 class Call(Frame):
     def __init__(self, master, controller):
         super().__init__(master)
-        self.client = Audio()
         self.controller = controller
         background_label = Label(self, image=controller.sp_background)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.msg = Label(self, font=('Ariel', 20), foreground='green')
+        self.msg = Label(self, font=('Ariel', 20), foreground='black')
         self.msg.pack()
         Button(self, text='end call', command=self.stop_call).pack()
 
@@ -71,11 +70,14 @@ class Call(Frame):
         clients_server.stop(self.controller.username, 'call')
 
     def start_call(self):
+        self.client = Audio()  # i have to start it here because i want to create a new socket when a call is made
+        # otherwise i will be trying to connect to a closed socket
         user = self.controller.target
         if not user:
             user = self.controller.user_called
         self.msg['text'] = f'In a call with {user}'
         Thread(target=self.call_ended, name='call_ended', daemon=True).start()
+
         self.client.start()
 
     def call_ended(self):
@@ -99,17 +101,17 @@ class Main(Frame):
         self.users = Listbox(self, fg='black', font=('Ariel', 12))
         self.target_name = Entry(self, font=('Ariel', 12))
         self.controller = controller
-        self.set()
+#        self.set()
         self.set_users_list()
         self.users.place(x=50, y=90)
         self.target_name.place(x=470, y=230)
 
-    def set(self):
+#    def set(self):
         Label(self, text='Call to', font=('Ariel', 20), foreground='black').place(x=520, y=170)
-        self.target_name.pack()
+        #self.target_name.pack()
         Button(self, text='Call', command=self.pre_call).place(x=520, y=280)
         Label(self, text='Users', font=('Ariel', 18), foreground='black').place(x=100, y=50)
-        self.users.pack()
+        #self.users.pack()
         self.users.bind('<<ListboxSelect>>', self.to_entry)
         self.bind('<Return>', self.pre_call)
         self.target_name.focus_set()
@@ -121,7 +123,7 @@ class Main(Frame):
         for user in users:
             if user != self.controller.username:
                 self.users.insert(END, user)
-        if self.users.size() < 10:
+        if self.users.size() < 20:
             self.users.configure(height=self.users.size())
         self.after(5000, self.set_users_list)
 
@@ -143,40 +145,16 @@ class Main(Frame):
                 self.controller.show_frame(Ringing)
                 self.controller.frames[Ringing].call()
             else:
-                pop_up_message(f"sorry, the user '{target}' is not registered yet")
+                pop_up_message(f"sorry, the user {target} is not registered yet")
         elif len(target) < 3:
             pop_up_message('sorry, the name is too short, at least 3 characters')
         else:
             pop_up_message("you can't call yourself")
 
 
-'''
-    # create list of users
-    def set_users_list(self):
-        self.active_users.delete(0, END)
-        users = clients_server.user_lists()
-        for user in users:
-            if user != self.controller.username:
-                self.active_users.insert(END, user)
-        if self.active_users.size() < 10:
-            self.active_users.configure(height=self.active_users.size())
-        self.after(5000, self.set_active_users_list)
-
-
-    # put a user in entry
-    def to_entry(self, event=None):
-        index = self.active_users.curselection()
-        name = self.active_users.get(index)
-        self.target_name.delete(0, END)
-        self.target_name.insert(0, name)
-'''
-
-
 # waiting for a call to be answered page
 class Ringing(Frame):
     ring = r"..\media\calling_ring.wav"
-
-    # ring = r"C:\PycharmProjects\project\zoom\media\phone_ring.mp3"
 
     def __init__(self, master, controller):
         super().__init__(master)
@@ -184,7 +162,7 @@ class Ringing(Frame):
         self.cancel = False
         background_label = Label(self, image=controller.sp_background)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.label = Label(self, font=('Ariel', 20), foreground='magenta')
+        self.label = Label(self, font=('Ariel', 20), foreground='black')
         self.label.pack()
         Button(self, text='Cancel Call', command=self.stop_calling).pack()
 
@@ -258,7 +236,7 @@ class Dialing(Frame):
         self.controller = controller
         background_label = Label(self, image=controller.sp_background)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
-        self.text1 = Label(self, font=('Ariel', 20), foreground='magenta')
+        self.text1 = Label(self, font=('Ariel', 20), foreground='black')
         self.text1.pack()
         self.bind('<Return>', self.yes)
         yes = Button(self, text='yes', command=self.yes)
@@ -300,6 +278,7 @@ class Dialing(Frame):
 
     def no(self):
         """ is this how i wanna handle that? the caller doesn't check if we canceled"""
+        # if clients_server.get_call_list.query.filter_by(src=self.controller.username).first():
         PlaySound(None, SND_PURGE)
         clients_server.stop(self.controller.username, 'ringing')
         self.controller.show_frame(Main)

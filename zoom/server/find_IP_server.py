@@ -3,11 +3,15 @@ from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
 import netifaces
+import socket
+from sqlalchemy import Column, Integer, String
 
 
 # השרת ניגש למאגר המידע, שולף את המידע הרלוונטי ומחזיר למשתמש
 
 # finds server's IP address and returns it
+
+
 def ip4_addresses():
     # https://stackoverflow.com/questions/49195864/how-to-get-all-ip-addresses-using-python-windows
     for iface in netifaces.interfaces():
@@ -38,11 +42,11 @@ ma = Marshmallow(app)
 # https://www.w3schools.com/sql/sql_unique.asp
 class User(db.Model):
     __table_name__ = 'User'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(32), unique=True, nullable=False)  # can't have the same username therefore it's unique
-    password = db.Column(db.String(32), nullable=False)
-    email = db.Column(db.String(32), nullable=False)
-    ip = db.Column(db.String(32), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(32), unique=True, nullable=False)  # can't have the same username therefore it's unique
+    password = Column(String(32), nullable=False)
+    email = Column(String(32), nullable=False)
+    ip = Column(String(32), nullable=False)
 
     def __repr__(self):
         return f"User('{self.id}', '{self.name}', '{self.email}', '{self.ip}')"  # omit password
@@ -57,15 +61,14 @@ class UserSchema(ma.Schema):
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
-
-class Active_Users(db.Model):
+'''
+class Active(db.Model):
     __table_name__ = 'Active'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    name = db.Column(db.String(32), unique=True, nullable=False)  # can't have the same username therefore it's unique
-    ip = db.Column(db.String(32), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(String(32), unique=True, nullable=False)  # can't have the same username therefore it's unique
 
     def __repr__(self):
-        return f"User('{self.id}', '{self.name}', '{self.ip}')"  # omit password
+        return f"User('{self.id}', '{self.name}')"  # omit password
 
 
 class UserSchema(ma.Schema):
@@ -75,21 +78,19 @@ class UserSchema(ma.Schema):
 
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
+'''
 
 
 class Call(db.Model):  # call other side
     __table_name__ = 'Call'
-    id = db.Column(db.Integer, primary_key=True, autoincrement=True)
-    src = db.Column(db.String(32), unique=True, nullable=False)  # the name of the src caller is unique
-    operation = db.Column(db.String(32), nullable=False)
-    dst = db.Column(db.String(32), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    src = Column(String(32), unique=True, nullable=False)  # the name of the src caller is unique
+    operation = Column(String(32), nullable=False)
+    dst = Column(String(32), nullable=False)
 
     def __repr__(self):
         return f"User('{self.id}', '{self.src}', '{self.operation}', '{self.dst}')"
         #   return 'id:{} src:{} operation:{} dst:{}'.format(self.id, self.src, self.operation, self.dst)
-
-
-#   db.create_all() #to create the tables
 
 
 class CallSchema(ma.Schema):
@@ -109,12 +110,24 @@ def user_list():
         return jsonify(user_names)
 
 
+'''
 @app.route('/active_user_list')
 def active_user_list():
     if request.method == 'GET':
-        results = db.session.query(Active_Users.name).all()
+        results = db.session.query(Active.name).all()
         user_names = [u.name for u in results]
         return jsonify(user_names)
+
+ 
+@app.route('/call_list')
+def is_in_call(src):  
+    if request.method == 'GET':
+        result = 'False'
+        user_info = Call.query.filter_by(src=src).first()
+        if user_info:
+            result = "True"
+        return jsonify(result)
+'''
 
 
 @app.route('/get_ip', methods=['GET'])
@@ -140,6 +153,10 @@ def login():
         if user_info:
             # print(user_info.name, user_info.ip)
             result = "True"
+            user_info.ip = request.remote_addr  # updates the user's ip to it's current one
+            # db.session.commit()
+            # db.session.add(Active(name=user_name))
+            db.session.commit()
         # print(f'sending {result}')
         return jsonify(result)
 
@@ -235,12 +252,15 @@ def check_connection():
         src = request.form.get("src")
         name = request.form.get("name")
         result = ""
-
+        print("in check")
         # check if not rejected
         if dst and src:
             data = Call.query.filter_by(dst=dst, src=src).first()
             if data:
                 result = True  # not rejected
+                print("connected")
+            else:
+                print("connection is dead")
 
         # check if in chat
         elif name:
@@ -249,22 +269,28 @@ def check_connection():
                 data = Call.query.filter_by(src=name, operation='call').first()
             if data:
                 result = True
+                print("in chat")
+            else:
+                print("not in chat")
 
         # check if being dialing; 'ringing'
         elif dst and not src:
             row = Call.query.filter_by(dst=dst).first()
             if row:
                 result = row.src
-        # print('sending:', result)
+        print('sending:', str(result))
         return jsonify(result)
 
 
 if __name__ == '__main__':
-    # db.create_all(app=app)
-    import socket
-
+    # db.create_all()  # to create the tables
     IPs = ip4_addresses()
     print(f'Server started!')
     print(f'IPs : {IPs}')
     print(f'hostname : {socket.gethostname()}')
+    db.session.query(Call).delete()  # because if a client stopped the program while calling someone he is still
+    # db.session.query(Active).delete()  # because if a client stopped the program while calling someone he is still
+    # calling according to the call table
+    db.session.commit()
+    print("deleted prior information in Call table")
     app.run(debug=False, host='0.0.0.0', port=5000)  # debug=False- if I have any errors they won't come up

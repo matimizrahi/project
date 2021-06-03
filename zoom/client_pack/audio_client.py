@@ -9,7 +9,7 @@ FORMAT = pyaudio.paInt16
 CHANNELS = 1
 RATE = 20000
 # socket
-SERVER_PORT = 50002
+SERVER_PORT = 50000
 SERVER_IP = clients_server.HOST_IP
 
 #לקוח המקליט ומשמיע קול
@@ -17,16 +17,18 @@ class Audio:
     # connect to server and start stream
     def __init__(self):
         self.s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        print("socket initiated")
         self.stop = False
-
         p = pyaudio.PyAudio()
-
-        self.receive_stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True, frames_per_buffer=CHUNK)
-        self.send_stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
-
-    def conn(self, server_ip, server_port):
-        self.s.connect((server_ip, server_port))
-        print("voice call connected")
+        try:
+            self.send_stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, input=True, frames_per_buffer=CHUNK)
+        except:
+            print("microphone is not connected")
+        try:
+            self.receive_stream = p.open(format=FORMAT, channels=CHANNELS, rate=RATE, output=True,
+                                         frames_per_buffer=CHUNK)
+        except:
+            print("speaker is not connected")
 
     def receive_data(self):
         while not self.stop:
@@ -40,7 +42,7 @@ class Audio:
         while not self.stop:
             try:
                 data = self.send_stream.read(CHUNK)
-                self.s.sendall(data)
+                self.s.send(data)
             except:
                 pass
 
@@ -51,7 +53,12 @@ class Audio:
         recv.start()
         send.start()
 
+    def conn(self, server_ip, server_port):
+        self.s.connect((server_ip, server_port))
+        print("voice call connected")
+
     def end(self):
         self.stop = True
         self.s.close()
+        self.stop = False
         # print('Voice chat closed')
