@@ -1,8 +1,8 @@
 import requests
 import time
 
-HOST_IP = '10.0.0.13'
-# HOST_IP = input('please enter host IP')
+
+HOST_IP = input('please enter host IP')
 MAIN_SERVER_PORT = 5000
 MAIN_SERVER_URL = f'http://{HOST_IP}:{MAIN_SERVER_PORT}'
 
@@ -122,13 +122,10 @@ if __name__ == '__main__':
     print(f'server ip = {HOST_IP}')
     print(f'server port = {MAIN_SERVER_PORT}')
     my_name = ''
-    print('Users List')
-    print(*user_lists(), sep='\n')
     while True:
         if look_for_call(my_name):
             break
     user = get_src_name(my_name)
-    print(user)
     accept(my_name, user)
 
     time.sleep(7)

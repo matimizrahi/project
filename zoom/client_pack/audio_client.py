@@ -60,5 +60,4 @@ class Audio:
     def end(self):
         self.stop = True
         self.s.close()
-        self.stop = False
-        # print('Voice chat closed')
+        print('the call ended')
