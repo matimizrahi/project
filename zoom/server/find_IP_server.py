@@ -17,7 +17,6 @@ def ip4_addresses():
     for iface in netifaces.interfaces():
         iface_details = netifaces.ifaddresses(iface)
         if netifaces.AF_INET in iface_details:
-            # print(iface_details[netifaces.AF_INET])
             for ip_interfaces in iface_details[netifaces.AF_INET]:
                 for key, ip_add in ip_interfaces.items():
                     if key == 'addr' and ip_add != '127.0.0.1':
@@ -104,9 +103,7 @@ calls_schema = CallSchema(many=True)
 
 @app.route('/user_list')
 def user_list():
-    print("in server")
     if request.method == 'GET':
-        print("in if")
         results = db.session.query(User.name).all()
         user_names = [u.name for u in results]
         return jsonify(user_names)
@@ -140,7 +137,6 @@ def get_ip():
         user_info = User.query.filter_by(name=user_name).first()
         if user_info:
             result = user_info.ip
-        # print('sending:', result)
         return jsonify(result)
 
 
@@ -153,21 +149,17 @@ def login():
         result = 'False'
         user_info = User.query.filter_by(name=user_name, password=password).first()
         if user_info:
-            # print(user_info.name, user_info.ip)
             result = "True"
             user_info.ip = request.remote_addr  # updates the user's ip to it's current one
             # db.session.commit()
             db.session.add(Active(name=user_name, ip=user_info.ip))
             db.session.commit()
-        # print(f'sending {result}')
         return jsonify(result)
 
 
 @app.route('/register', methods=['POST'])
 def register():
     if request.method == 'POST':
-        # data = request.form
-        # print(data)
         user_name = request.form.get("name")
         password = request.form.get("password")
         email = request.form.get("email")
@@ -176,14 +168,10 @@ def register():
         user_info = User.query.filter_by(name=user_name).first()
         # checks if name already exist
         if not user_info:
-            print("not user info")
             new_user = User(name=user_name, password=password, email=email, ip=ip)
-            print("1")
             db.session.add(new_user)
             db.session.commit()
-            print("new user:", new_user.id, user_name, password, email, ip)
             result = 'True'
-        print(f'sending {result}')
         return jsonify(result)
 
 
@@ -200,7 +188,6 @@ def accept():
                 row.operation = op
                 db.session.commit()
                 result = 'True'
-        # print(f'sending {result}')
         return jsonify(result)
 
 
@@ -227,7 +214,6 @@ def stop():
                 db.session.delete(row)
                 db.session.commit()
                 result = 'call stopped'
-        # print('sending:', result)
         return jsonify(result)
 
 
@@ -243,9 +229,7 @@ def call():
             new_call = Call(src=src, operation=operation, dst=dst)
             db.session.add(new_call)
             db.session.commit()
-            # print("new_call:", new_call.id, src, operation, dst)
             result = "True"
-        # print('sending:', result)
         return jsonify(result)
 
 
@@ -256,15 +240,11 @@ def check_connection():
         src = request.form.get("src")
         name = request.form.get("name")
         result = ""
-        # print("in check")
         # check if not rejected
         if dst and src:
             data = Call.query.filter_by(dst=dst, src=src).first()
             if data:
                 result = True  # not rejected
-                # print("connected")
-            # else:
-                # print("connection is dead")
 
         # check if in chat
         elif name:
@@ -273,16 +253,12 @@ def check_connection():
                 data = Call.query.filter_by(src=name, operation='call').first()
             if data:
                 result = True
-                # print("in chat")
-            # else:
-                # print("not in chat")
 
         # check if being dialing; 'ringing'
         elif dst and not src:
             row = Call.query.filter_by(dst=dst).first()
             if row:
                 result = row.src
-        # print('sending:', str(result))
         return jsonify(result)
 
 
@@ -290,7 +266,7 @@ if __name__ == '__main__':
     db.create_all()  # to create the tables
     IPs = ip4_addresses()
     print(f'Server started!')
-    print(f'IPs : {IPs}')
+    print(f'IPv4 : {IPs}')
     print(f'hostname : {socket.gethostname()}')
     db.session.query(Call).delete()  # because if a client stopped the program while calling someone he is still
     db.session.query(Active).delete()  # because if a client stopped the program while calling someone he is still
