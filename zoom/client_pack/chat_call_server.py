@@ -10,7 +10,7 @@ MAIN_SERVER_URL = f'http://{HOST_IP}:{MAIN_SERVER_PORT}'
 def user_left(name):
     data = {'name': name}
     r = requests.get(MAIN_SERVER_URL + '/left', data=data)
-    return r.json()
+
 
 
 # if call not rejected returns True

@@ -1,7 +1,6 @@
 import socket
 import select
 import time
-from server.find_IP_server import ip_in_Active
 """connects clients to server"""
 
 
@@ -43,8 +42,6 @@ class Server:
                         print(time.strftime("%H:%M:%S", time.localtime()), "%s left the server" % str(self.addresses[current_socket]))
                         current_socket.close()
                         self.CONNECTION_LIST.remove(current_socket)
-                        ip_in_Active(address[0])
-
 
 
 if __name__ == "__main__":

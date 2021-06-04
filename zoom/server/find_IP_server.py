@@ -107,7 +107,7 @@ def ip_in_Active(ip):
     call_dst = Call.query.filter_by(dst=name).first()
     # if the clients just ended the call they wont be on the call table
     if call_src:
-        db.session.delete(call_dst)
+        db.session.delete(call_src)
         a = Active.query.filter_by(ip=ip).first()
         if a:
             db.session.delete(a)
@@ -128,9 +128,15 @@ def user_left():
         if a:
             db.session.delete(a)
             db.session.commit()
-            return jsonify(a)
-        else:
-            return jsonify('False')
+        call_src = Call.query.filter_by(src=user_name).first()
+        call_dst = Call.query.filter_by(dst=user_name).first()
+        if call_src:
+            db.session.delete(call_src)
+            db.session.commit()
+        if call_dst:
+            db.session.delete(call_dst)
+            db.session.commit()
+        return jsonify('True')
 
 
 @app.route('/user_list')

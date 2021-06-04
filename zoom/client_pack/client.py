@@ -143,7 +143,6 @@ class Main(Frame):
             if not chat_call_server.is_user(target, "Active"):
                 pop_up_message(f"sorry, the user {target} is not active right now")
             elif chat_call_server.is_user(target, "User"):  # checks if the user exists
-                print("us")
                 self.controller.target = target
                 self.controller.show_frame(Ringing)
                 self.controller.frames[Ringing].call()
