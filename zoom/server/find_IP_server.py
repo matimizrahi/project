@@ -61,24 +61,24 @@ class UserSchema(ma.Schema):
 user_schema = UserSchema()
 users_schema = UserSchema(many=True)
 
-'''
+
 class Active(db.Model):
     __table_name__ = 'Active'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(String(32), unique=True, nullable=False)  # can't have the same username therefore it's unique
+    ip = Column(String(32), nullable=False)
 
     def __repr__(self):
-        return f"User('{self.id}', '{self.name}')"  # omit password
+        return f"User('{self.id}', '{self.name}', '{self.ip}')"  # omit password
 
 
-class UserSchema(ma.Schema):
+class ActiveUserSchema(ma.Schema):
     class Meta:
         fields = ('name', 'ip')
 
 
-user_schema = UserSchema()
-users_schema = UserSchema(many=True)
-'''
+active_user_schema = ActiveUserSchema()
+active_users_schema = ActiveUserSchema(many=True)
 
 
 class Call(db.Model):  # call other side
@@ -104,19 +104,22 @@ calls_schema = CallSchema(many=True)
 
 @app.route('/user_list')
 def user_list():
+    print("in server")
     if request.method == 'GET':
+        print("in if")
         results = db.session.query(User.name).all()
         user_names = [u.name for u in results]
         return jsonify(user_names)
 
 
-'''
 @app.route('/active_user_list')
 def active_user_list():
     if request.method == 'GET':
-        results = db.session.query(Active.name).all()
-        user_names = [u.name for u in results]
-        return jsonify(user_names)
+        if db.session.query(Active).first:
+            results = db.session.query(Active.name).all()
+            user_names = [u.name for u in results]
+            return jsonify(user_names)
+    return jsonify(False)
 
  
 @app.route('/call_list')
@@ -127,7 +130,6 @@ def is_in_call(src):
         if user_info:
             result = "True"
         return jsonify(result)
-'''
 
 
 @app.route('/get_ip', methods=['GET'])
@@ -155,7 +157,7 @@ def login():
             result = "True"
             user_info.ip = request.remote_addr  # updates the user's ip to it's current one
             # db.session.commit()
-            # db.session.add(Active(name=user_name))
+            db.session.add(Active(name=user_name, ip=user_info.ip))
             db.session.commit()
         # print(f'sending {result}')
         return jsonify(result)
@@ -172,14 +174,16 @@ def register():
         ip = request.remote_addr
         result = 'False'
         user_info = User.query.filter_by(name=user_name).first()
-        # check if name already exist
+        # checks if name already exist
         if not user_info:
+            print("not user info")
             new_user = User(name=user_name, password=password, email=email, ip=ip)
+            print("1")
             db.session.add(new_user)
             db.session.commit()
-            # print("new user:", new_user.id, user_name, password, email ip)
-            result = "True"
-        # print(f'sending {result}')
+            print("new user:", new_user.id, user_name, password, email, ip)
+            result = 'True'
+        print(f'sending {result}')
         return jsonify(result)
 
 
@@ -252,15 +256,15 @@ def check_connection():
         src = request.form.get("src")
         name = request.form.get("name")
         result = ""
-        print("in check")
+        # print("in check")
         # check if not rejected
         if dst and src:
             data = Call.query.filter_by(dst=dst, src=src).first()
             if data:
                 result = True  # not rejected
-                print("connected")
-            else:
-                print("connection is dead")
+                # print("connected")
+            # else:
+                # print("connection is dead")
 
         # check if in chat
         elif name:
@@ -269,27 +273,27 @@ def check_connection():
                 data = Call.query.filter_by(src=name, operation='call').first()
             if data:
                 result = True
-                print("in chat")
-            else:
-                print("not in chat")
+                # print("in chat")
+            # else:
+                # print("not in chat")
 
         # check if being dialing; 'ringing'
         elif dst and not src:
             row = Call.query.filter_by(dst=dst).first()
             if row:
                 result = row.src
-        print('sending:', str(result))
+        # print('sending:', str(result))
         return jsonify(result)
 
 
 if __name__ == '__main__':
-    # db.create_all()  # to create the tables
+    db.create_all()  # to create the tables
     IPs = ip4_addresses()
     print(f'Server started!')
     print(f'IPs : {IPs}')
     print(f'hostname : {socket.gethostname()}')
     db.session.query(Call).delete()  # because if a client stopped the program while calling someone he is still
-    # db.session.query(Active).delete()  # because if a client stopped the program while calling someone he is still
+    db.session.query(Active).delete()  # because if a client stopped the program while calling someone he is still
     # calling according to the call table
     db.session.commit()
     print("deleted prior information in Call table")

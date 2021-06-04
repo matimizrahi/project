@@ -16,10 +16,11 @@ def not_rejected(src, dst):
 
 # registered users
 def user_lists():
+    print("slient-servre")
     r = requests.get(MAIN_SERVER_URL + '/user_list')
     return r.json()  # r.status_code
 
-'''
+
 # active users- to display on main page
 def active_user_lists():
     r = requests.get(MAIN_SERVER_URL + '/active_user_list')
@@ -29,7 +30,7 @@ def active_user_lists():
 def is_in_call():
     r = requests.get(MAIN_SERVER_URL + '/call_list')
     return r.json()  # r.status_code
-'''
+
 
 # returns ip or 0 if user doesnt exist
 def get_user_ip(name):

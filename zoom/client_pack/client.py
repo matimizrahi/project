@@ -96,6 +96,7 @@ class Call(Frame):
 class Main(Frame):
     def __init__(self, master, controller):
         super().__init__(master)
+        print("main")
         background_label = Label(self, image=controller.sp_background)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.users = Listbox(self, fg='black', font=('Ariel', 12))
@@ -119,11 +120,15 @@ class Main(Frame):
     # create list of users
     def set_users_list(self):
         self.users.delete(0, END)
-        users = clients_server.user_lists()
+        users = clients_server.active_user_lists()
+        print("in def", self.controller.username)
         for user in users:
+            # print("in for")
             if user != self.controller.username:
+                print("in if", user, " === ", self.controller.username)
                 self.users.insert(END, user)
         if self.users.size() < 20:
+            print(" if")
             self.users.configure(height=self.users.size())
         self.after(5000, self.set_users_list)
 
@@ -397,20 +402,20 @@ class Register(Frame):
     #   checks if yhe entered values are valid and calls for clients_server.register to enter into the database
     def handle(self, event=None):
         name = self.entry_name.get()
-        passW = self.entry_password.get()
+        pass_w = self.entry_password.get()
         email = self.entry_email.get()
         self.entry_name.delete(0, END)
         self.entry_password.delete(0, END)
         self.entry_email.delete(0, END)
         # checks if valid
-        if len(name) < 3 or len(passW) < 3 or str(email[-10:]) != "@gmail.com":
+        if len(name) < 3 or len(pass_w) < 3 or str(email[-10:]) != "@gmail.com":
             pop_up_message('name and password must be at least 3 characters and email address must end with @gmail.com')
         # add to database unless name is already used
         else:
-            success = clients_server.register(name, passW, email)
+            success = clients_server.register(name, pass_w, email)
             if success:
                 # pop_up_message('added to database')
-                self.controller.frames[Login].enter(name, passW, False)
+                self.controller.frames[Login].enter(name, pass_w, False)
             else:
                 pop_up_message('username already used')
 
