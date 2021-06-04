@@ -26,7 +26,7 @@ def ip4_addresses():
 project_dir = os.path.dirname(os.path.abspath(__file__))
 database_file = "sqlite:///{}".format(os.path.join(project_dir, "database.db"))  # /// is a relative path
 
-# creating a Flask app 
+# creating a Flask app
 app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_file
@@ -101,6 +101,38 @@ call_schema = CallSchema()
 calls_schema = CallSchema(many=True)
 
 
+def ip_in_Active(ip):
+    name = Active.query.filter_by(ip=ip).first().name
+    call_src = Call.query.filter_by(src=name).first()
+    call_dst = Call.query.filter_by(dst=name).first()
+    # if the clients just ended the call they wont be on the call table
+    if call_src:
+        db.session.delete(call_dst)
+        a = Active.query.filter_by(ip=ip).first()
+        if a:
+            db.session.delete(a)
+            db.session.commit()
+    elif call_dst:
+        db.session.delete(call_dst)
+        a = Active.query.filter_by(ip=ip).first()
+        if a:
+            db.session.delete(a)
+            db.session.commit()
+
+
+@app.route('/left')
+def user_left():
+    if request.method == 'GET':
+        user_name = request.form.get("name")
+        a = Active.query.filter_by(name=user_name).first()
+        if a:
+            db.session.delete(a)
+            db.session.commit()
+            return jsonify(a)
+        else:
+            return jsonify('False')
+
+
 @app.route('/user_list')
 def user_list():
     if request.method == 'GET':
@@ -118,9 +150,9 @@ def active_user_list():
             return jsonify(user_names)
     return jsonify(False)
 
- 
+
 @app.route('/call_list')
-def is_in_call(src):  
+def is_in_call(src):
     if request.method == 'GET':
         result = 'False'
         user_info = Call.query.filter_by(src=src).first()
@@ -133,8 +165,12 @@ def is_in_call(src):
 def get_ip():
     if request.method == 'GET':
         user_name = request.form.get("name")
+        table = request.form.get("table")
         result = ""
-        user_info = User.query.filter_by(name=user_name).first()
+        if table == "Active":
+            user_info = Active.query.filter_by(name=user_name).first()
+        else:
+            user_info = User.query.filter_by(name=user_name).first()
         if user_info:
             result = user_info.ip
         return jsonify(result)
@@ -145,7 +181,8 @@ def login():
     if request.method == 'GET':
         user_name = request.form.get("name")
         password = request.form.get("password")
-
+        if Active.query.filter_by(name=user_name).first():
+            return jsonify('already_conn')
         result = 'False'
         user_info = User.query.filter_by(name=user_name, password=password).first()
         if user_info:

@@ -1,4 +1,5 @@
 from tkinter import *
+from tkinter import messagebox
 from tkinter.ttk import *
 from threading import Thread, enumerate, active_count
 import time
@@ -7,8 +8,15 @@ from client_pack.gui_methods import center_window, pop_up_message
 from client_pack import chat_call_server
 from client_pack.connect_call_server import Audio
 
+username = '*'
 
-# creates the pages and shows them
+
+def on_closing():
+    if messagebox.askokcancel("Quit", "Do you want to quit?"):
+        app.destroy()
+        chat_call_server.user_left(username)
+
+
 class App(Tk):
     background = r"..\media\background.png"
 
@@ -21,7 +29,7 @@ class App(Tk):
         self.container.grid_rowconfigure(0, weight=1)
         self.container.grid_columnconfigure(0, weight=1)
 
-        self.username = ''
+        self.username = '*'
         self.target = ''
         self.user_called = ''
         self.frames = {}
@@ -44,6 +52,7 @@ class App(Tk):
     def show_frame(self, context):
         frame = self.frames[context]
         frame.tkraise()
+    # creates the pages and shows them
 
 
 # call page
@@ -92,17 +101,17 @@ class Main(Frame):
         self.users = Listbox(self, fg='black', font=('Ariel', 12))
         self.target_name = Entry(self, font=('Ariel', 12))
         self.controller = controller
-#        self.set()
+        #        self.set()
         self.set_users_list()
         self.users.place(x=50, y=90)
         self.target_name.place(x=470, y=230)
 
-#    def set(self):
+        #    def set(self):
         Label(self, text='Call to', font=('Ariel', 20), foreground='black').place(x=520, y=170)
-        #self.target_name.pack()
+        # self.target_name.pack()
         Button(self, text='Call', command=self.pre_call).place(x=520, y=280)
         Label(self, text='Users', font=('Ariel', 18), foreground='black').place(x=100, y=50)
-        #self.users.pack()
+        # self.users.pack()
         self.users.bind('<<ListboxSelect>>', self.to_entry)
         self.bind('<Return>', self.pre_call)
         self.target_name.focus_set()
@@ -131,7 +140,10 @@ class Main(Frame):
         target = self.target_name.get()
         self.target_name.delete(0, END)
         if len(target) > 2 and target != self.controller.username:
-            if chat_call_server.is_user(target):  # checks if the user exists
+            if not chat_call_server.is_user(target, "Active"):
+                pop_up_message(f"sorry, the user {target} is not active right now")
+            elif chat_call_server.is_user(target, "User"):  # checks if the user exists
+                print("us")
                 self.controller.target = target
                 self.controller.show_frame(Ringing)
                 self.controller.frames[Ringing].call()
@@ -277,7 +289,7 @@ class StartPage(Frame):
         Label(self, text='log in or sign up in order to continue',
               font="-family {Segoe UI} -size 20", foreground='black').place(x=180, y=200)
         Button(self, text='login', width=30, command=lambda: controller.show_frame(Login)).place(x=180, y=350)
-        Button(self, text='sign up',width=30, command=lambda: controller.show_frame(Register)).place(x=400, y=350)
+        Button(self, text='sign up', width=30, command=lambda: controller.show_frame(Register)).place(x=400, y=350)
 
 
 # login page
@@ -287,8 +299,10 @@ class Login(Frame):
         background_label = Label(self, image=controller.sp_background)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.controller = controller
-        Label(self, text='this is the login page', font="-family {Segoe UI} -size 20 -weight bold", foreground='black').place(x=220, y=100)
-        Label(self, text='enter your username and password', font="-family {Segoe UI} -size 20", foreground='black').place(x=150, y=150)
+        Label(self, text='this is the login page', font="-family {Segoe UI} -size 20 -weight bold",
+              foreground='black').place(x=220, y=100)
+        Label(self, text='enter your username and password', font="-family {Segoe UI} -size 20",
+              foreground='black').place(x=150, y=150)
         self.entry_name = Entry(self)
         self.entry_passW = Entry(self, show='*')
         name = Label(self, text='Name', font="-family {Segoe UI} -size 12")
@@ -313,8 +327,10 @@ class Login(Frame):
 
     def enter(self, name, passW, is_login):
         is_connected = chat_call_server.login(name, passW)
-        if is_connected:
+        if is_connected == 'True':
             self.controller.username = name
+            global username
+            username = name
             if is_login:
                 pop_up_message(f"welcome back, {name}")
             else:
@@ -322,10 +338,14 @@ class Login(Frame):
             self.controller.create_frames()
             self.controller.show_frame(Main)
             self.controller.frames[Dialing].start_checking()
-        else:
+        elif is_connected == 'False':
             self.entry_name.delete(0, END)
             self.entry_passW.delete(0, END)
             pop_up_message("name or password is incorrect")
+        else:
+            self.entry_name.delete(0, END)
+            self.entry_passW.delete(0, END)
+            pop_up_message("the user that goes by that username is already connected")
 
     def collect(self):
         name = self.entry_name.get()
@@ -343,7 +363,8 @@ class Register(Frame):
         background_label = Label(self, image=controller.sp_background)
         background_label.place(x=0, y=0, relwidth=1, relheight=1)
         self.controller = controller
-        Label(self, text='this is the registration page', font="-family {Segoe UI} -size 20 -weight bold", foreground='black').place(x=220, y=100)
+        Label(self, text='this is the registration page', font="-family {Segoe UI} -size 20 -weight bold",
+              foreground='black').place(x=220, y=100)
         Label(self, text='enter your desired username and password and enter your email',
               font="-family {Segoe UI} -size 20", foreground='black').place(x=20, y=150)
         self.entry_name = Entry(self)
@@ -398,4 +419,5 @@ class Register(Frame):
 
 if __name__ == '__main__':
     app = App()
+    app.protocol("WM_DELETE_WINDOW", on_closing)
     app.mainloop()

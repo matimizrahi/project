@@ -2,9 +2,15 @@ import requests
 import time
 
 
-HOST_IP = input('please enter host IP')
+HOST_IP = input('enter host IP: ')
 MAIN_SERVER_PORT = 5000
 MAIN_SERVER_URL = f'http://{HOST_IP}:{MAIN_SERVER_PORT}'
+
+
+def user_left(name):
+    data = {'name': name}
+    r = requests.get(MAIN_SERVER_URL + '/left', data=data)
+    return r.json()
 
 
 # if call not rejected returns True
@@ -33,15 +39,15 @@ def is_in_call():
 
 
 # returns ip or 0 if user doesnt exist
-def get_user_ip(name):
-    data = {'name': name}
+def get_user_ip(name, table):
+    data = {'name': name, 'table': table}
     r = requests.get(MAIN_SERVER_URL + '/get_ip', data=data)
     return r.json()  # r.status_code
 
 
-# return true if user exists
-def is_user(name):
-    if get_user_ip(name):
+# return true if name exists in table
+def is_user(name, table):
+    if get_user_ip(name, table):
         return True
     return False
 
@@ -52,8 +58,10 @@ def login(name, password):
     r = requests.get(MAIN_SERVER_URL + '/login', data=data)
     if r.json() == 'True':
         print(name, " logged in")
-        return True
-    return False
+        return 'True'
+    elif r.json() == 'already_conn':
+        return 'already_conn'
+    return 'False'
 
 
 # register
@@ -120,6 +128,7 @@ def stop(name, operation):
 
 
 if __name__ == '__main__':
+    '''
     print(f'server ip = {HOST_IP}')
     print(f'server port = {MAIN_SERVER_PORT}')
     my_name = ''
@@ -130,4 +139,4 @@ if __name__ == '__main__':
     accept(my_name, user)
 
     time.sleep(7)
-    stop(my_name, 'call')
+    stop(my_name, 'call')'''

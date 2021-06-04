@@ -4,11 +4,13 @@ import time
 
 def pop_up_message(text):
     win = Tk()
+    win.title("error")
     center_window(win, height=100)
     Label(win, text=text).pack()
     win.update()
     time.sleep(1.5)
     win.destroy()
+
 
 # centers the root frame
 def center_window(root, width=800, height=550):
