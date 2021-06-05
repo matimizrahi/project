@@ -154,7 +154,7 @@ def active_user_list():
             results = db.session.query(Active.name).all()
             user_names = [u.name for u in results]
             return jsonify(user_names)
-    return jsonify(False)
+        return jsonify(False)
 
 
 @app.route('/call_list')
@@ -227,7 +227,7 @@ def accept():
         result = ""
         row = Call.query.filter_by(dst=dst, src=src).first()
         if row:
-            if row.operation == 'ringing':
+            if row.operation == 'dialing':
                 row.operation = op
                 db.session.commit()
                 result = 'True'
@@ -241,14 +241,14 @@ def stop():
         op = request.form.get("operation")
         result = "empty"
 
-        if op == 'ringing':
+        if op == 'dialing':
             row = Call.query.filter_by(src=name).first()
             if not row:
                 row = Call.query.filter_by(dst=name).first()
             if row:
                 db.session.delete(row)
                 db.session.commit()
-                result = 'ringing stopped'
+                result = 'dialing stopped'
         else:  # call
             row = Call.query.filter_by(src=name).first()
             if not row:
@@ -297,7 +297,7 @@ def check_connection():
             if data:
                 result = True
 
-        # check if being dialing; 'ringing'
+        # check if being ringing; 'dialing'
         elif dst and not src:
             row = Call.query.filter_by(dst=dst).first()
             if row:

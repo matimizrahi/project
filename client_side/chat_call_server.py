@@ -72,10 +72,10 @@ def register(name, password, email):
     return False
 
 
-# post ringing
+# post dialing
 def call(src, dst):
     # print("call: src->", src, "   <-dst->", dst)
-    new_call = {'src': src, 'operation': 'ringing', 'dst': dst}
+    new_call = {'src': src, 'operation': 'dialing', 'dst': dst}
     r = requests.post(MAIN_SERVER_URL + '/call', data=new_call)
     # print(r.json())  # r.status_code
     if r.json() == 'True':
@@ -83,7 +83,7 @@ def call(src, dst):
     return False
 
 
-# change from ringing to call
+# change from dialing to call
 def accept(src, dst):
     # print("accept: src->", src, "   <-dst->", dst)
     new_call = {'src': src, 'operation': 'call', 'dst': dst}
@@ -92,15 +92,15 @@ def accept(src, dst):
     # print(r.json())  # r.status_code
 
 
-# check if a user is dialing
+# check if a user is ringing
 def look_for_call(dst):
     # print("look for call: dst->", dst)
-    check_call = {'operation': 'ringing', 'dst': dst}
+    check_call = {'operation': 'dialing', 'dst': dst}
     r = requests.get(MAIN_SERVER_URL + '/check', data=check_call)
     return r.json()  # returns src or ""
 
 
-# returns name of ringing user
+# returns name of dialing user
 def get_src_name(dst):
     # print("der_src_name: dst->", dst)
     name = look_for_call(dst)
@@ -116,7 +116,7 @@ def is_in_call(name):
     return r.json()
 
 
-# when ringing
+# when dialing
 def stop(name, operation):
     # print("stop: name->", name, "   <-op->", operation)
     msg = {'name': name, 'operation': operation}

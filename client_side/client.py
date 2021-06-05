@@ -44,7 +44,7 @@ class App(Tk):
         self.deiconify()
 
     def create_frames(self):
-        for F in (StartPage, Login, Register, Main, Ringing, Dialing, Call):
+        for F in (StartPage, Login, Register, Main, Dialing, Ringing, Call):
             frame = F(self.container, self)
             self.frames[F] = frame
             frame.grid(row=0, column=0, sticky="nsew")
@@ -88,7 +88,7 @@ class Call(Frame):
                 self.client.end()
                 self.controller.show_frame(Main)
                 time.sleep(0.4)
-                self.controller.frames[Dialing].start_checking()
+                self.controller.frames[Ringing].start_checking()
                 break
 
 
@@ -144,8 +144,8 @@ class Main(Frame):
                 pop_up_message(f"sorry, the user {target} is not active right now")
             elif chat_call_server.is_user(target, "User"):  # checks if the user exists
                 self.controller.target = target
-                self.controller.show_frame(Ringing)
-                self.controller.frames[Ringing].call()
+                self.controller.show_frame(Dialing)
+                self.controller.frames[Dialing].call()
             else:
                 pop_up_message(f"sorry, the user {target} is not registered yet")
         elif len(target) < 3:
@@ -155,7 +155,7 @@ class Main(Frame):
 
 
 # waiting for a call to be answered page
-class Ringing(Frame):
+class Dialing(Frame):
     ring = r"..\client_side\dialing.wav"
 
     def __init__(self, master, controller):
@@ -170,18 +170,18 @@ class Ringing(Frame):
 
     def call(self):
         self.label['text'] = f'Calling {self.controller.target}...'
-        Thread(target=self.ringing, name='ringing', daemon=True).start()
+        Thread(target=self.dialing, name='dialing', daemon=True).start()
 
     # cancels call
     def stop_calling(self):
-        chat_call_server.stop(self.controller.username, 'ringing')
+        chat_call_server.stop(self.controller.username, 'dialing')
         self.cancel = True
 
     # checks if target agreed to chat
     def answer(self, timeout=1):
         max_time = time.time() + 60 * timeout  # 1 minutes from now
-        # check if 'ringing' changed to 'call'
-        PlaySound(Ringing.ring, SND_LOOP + SND_ASYNC)
+        # check if 'dialing' changed to 'call'
+        PlaySound(Dialing.ring, SND_LOOP + SND_ASYNC)
         while True:
             time.sleep(1)
             if self.cancel:
@@ -200,7 +200,7 @@ class Ringing(Frame):
         return result
 
     # calls and handle the call
-    def ringing(self):
+    def dialing(self):
         is_posted = chat_call_server.call(self.controller.username, self.controller.target)
         if is_posted:
             result = self.answer(1)
@@ -217,12 +217,12 @@ class Ringing(Frame):
                     pop_up_message("call rejected")
 
         else:  # error, call already exists, handling
-            chat_call_server.stop(self.controller.username, 'ringing')
-            self.ringing()
+            chat_call_server.stop(self.controller.username, 'dialing')
+            self.dialing()
 
 
 # receiving a call page
-class Dialing(Frame):
+class Ringing(Frame):
     sound = r"..\client_side\ring.wav"
 
     def __init__(self, parent, controller):
@@ -240,18 +240,18 @@ class Dialing(Frame):
         Button(self, text='no', command=self.no).pack()
 
     def start_checking(self):
-        Thread(target=self.dialing, name='dialing', daemon=True).start()
+        Thread(target=self.ringing, name='ringing', daemon=True).start()
 
-    def dialing(self):
+    def ringing(self):
         while True:
             if chat_call_server.look_for_call(self.controller.username):
-                self.controller.show_frame(Dialing)
+                self.controller.show_frame(Ringing)
                 user = chat_call_server.get_src_name(self.controller.username)
                 self.controller.user_called = user
                 self.text1['text'] = f'you got a call from {user}\ndo you want to answer'
-                PlaySound(Dialing.sound, SND_LOOP + SND_ASYNC)
+                PlaySound(Ringing.sound, SND_LOOP + SND_ASYNC)
                 break
-            if chat_call_server.is_in_call(self.controller.username):  # when ringing and call was approved
+            if chat_call_server.is_in_call(self.controller.username):  # when dialing and call was approved
                 break
             time.sleep(1)
 
@@ -264,7 +264,7 @@ class Dialing(Frame):
             self.controller.frames[Call].start_call()
         else:
             pop_up_message('call was canceled')
-            chat_call_server.stop(self.controller.username, 'ringing')
+            chat_call_server.stop(self.controller.username, 'dialing')
             self.controller.show_frame(Main)
             self.start_checking()
 
@@ -272,7 +272,7 @@ class Dialing(Frame):
         """ is this how i wanna handle that? the caller doesn't check if we canceled"""
         # if clients_server.get_call_list.query.filter_by(src=self.controller.username).first():
         PlaySound(None, SND_PURGE)
-        chat_call_server.stop(self.controller.username, 'ringing')
+        chat_call_server.stop(self.controller.username, 'dialing')
         self.controller.show_frame(Main)
         self.start_checking()
 
@@ -336,7 +336,7 @@ class Login(Frame):
                 pop_up_message(f"welcome, {name}")
             self.controller.create_frames()
             self.controller.show_frame(Main)
-            self.controller.frames[Dialing].start_checking()
+            self.controller.frames[Ringing].start_checking()
         elif is_connected == 'False':
             self.entry_name.delete(0, END)
             self.entry_passW.delete(0, END)
