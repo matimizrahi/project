@@ -1,7 +1,7 @@
 import socket
 import pyaudio
 from threading import Thread
-from client_side import chat_call_server
+from client_side import chat_server
 
 # record
 CHUNK = 1024  # 512
@@ -10,7 +10,7 @@ CHANNELS = 1
 RATE = 20000
 # socket
 SERVER_PORT = 50000
-SERVER_IP = chat_call_server.HOST_IP
+SERVER_IP = chat_server.HOST_IP
 
 #לקוח המקליט ומשמיע קול
 class Audio:
