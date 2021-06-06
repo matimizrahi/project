@@ -38,7 +38,8 @@ class Server:
                         data = current_socket.recv(1024)
                         self.broadcast(current_socket, data)
                     except socket.error:
-                        print(time.strftime("%H:%M:%S", time.localtime()), "%s left the server" % str(self.addresses[current_socket]))
+                        print(time.strftime("%H:%M:%S", time.localtime()),
+                              "%s left the server" % str(self.addresses[current_socket]))
                         current_socket.close()
                         self.CONNECTION_LIST.remove(current_socket)
 

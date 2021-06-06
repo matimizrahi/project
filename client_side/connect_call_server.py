@@ -12,6 +12,7 @@ RATE = 20000
 SERVER_PORT = 50000
 SERVER_IP = chat_server.HOST_IP
 
+
 #לקוח המקליט ומשמיע קול
 class Audio:
     # connect to call_server and start stream

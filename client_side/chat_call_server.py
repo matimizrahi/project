@@ -1,7 +1,7 @@
 import requests
 
 
-HOST_IP = input('enter host IP: ')
+HOST_IP = input('enter server IP address: ')
 MAIN_SERVER_PORT = 5000
 MAIN_SERVER_URL = f'http://{HOST_IP}:{MAIN_SERVER_PORT}'
 
@@ -28,19 +28,19 @@ def user_lists():
 # active users- to display on main page
 def active_user_lists():
     r = requests.get(MAIN_SERVER_URL + '/active_user_list')
-    return r.json()  # r.status_code
+    return r.json()
 
 
 def is_in_call():
     r = requests.get(MAIN_SERVER_URL + '/call_list')
-    return r.json()  # r.status_code
+    return r.json()
 
 
 # returns ip or 0 if user doesnt exist
 def get_user_ip(name, table):
     data = {'name': name, 'table': table}
     r = requests.get(MAIN_SERVER_URL + '/get_ip', data=data)
-    return r.json()  # r.status_code
+    return r.json()
 
 
 # return true if name exists in table
@@ -74,10 +74,8 @@ def register(name, password, email):
 
 # post dialing
 def call(src, dst):
-    # print("call: src->", src, "   <-dst->", dst)
     new_call = {'src': src, 'operation': 'dialing', 'dst': dst}
     r = requests.post(MAIN_SERVER_URL + '/call', data=new_call)
-    # print(r.json())  # r.status_code
     if r.json() == 'True':
         return True
     return False
@@ -85,24 +83,20 @@ def call(src, dst):
 
 # change from dialing to call
 def accept(src, dst):
-    # print("accept: src->", src, "   <-dst->", dst)
     new_call = {'src': src, 'operation': 'call', 'dst': dst}
     r = requests.put(MAIN_SERVER_URL + '/accept', data=new_call)
     return r.json()
-    # print(r.json())  # r.status_code
 
 
 # check if a user is ringing
 def look_for_call(dst):
-    # print("look for call: dst->", dst)
     check_call = {'operation': 'dialing', 'dst': dst}
     r = requests.get(MAIN_SERVER_URL + '/check', data=check_call)
-    return r.json()  # returns src or ""
+    return r.json()
 
 
 # returns name of dialing user
 def get_src_name(dst):
-    # print("der_src_name: dst->", dst)
     name = look_for_call(dst)
     if name:
         return name
@@ -110,7 +104,6 @@ def get_src_name(dst):
 
 # check if call accepted or if call still alive
 def is_in_call(name):
-    # print("is_in_call: name->", name)
     data = {'name': name}
     r = requests.get(MAIN_SERVER_URL + '/check', data=data)
     return r.json()
@@ -118,9 +111,8 @@ def is_in_call(name):
 
 # when dialing
 def stop(name, operation):
-    # print("stop: name->", name, "   <-op->", operation)
     msg = {'name': name, 'operation': operation}
     r = requests.delete(MAIN_SERVER_URL + "/stop", data=msg)
     # print(r.json())
-    return r.json()  # r.status_code
+    return r.json()
 
