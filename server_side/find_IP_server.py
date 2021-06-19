@@ -1,7 +1,6 @@
 import os
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
-from flask_marshmallow import Marshmallow
 import socket
 from sqlalchemy import Column, Integer, String
 
@@ -17,10 +16,7 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = database_file
 
-# Order matters: Initialize SQLAlchemy before Marshmallow
 db = SQLAlchemy(app)
-ma = Marshmallow(app)
-
 
 class User(db.Model):
     __table_name__ = 'User'
