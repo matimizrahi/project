@@ -38,15 +38,6 @@ class User(db.Model):
         #   return 'id:{} name:{} email{} ip:{}'.format(self.id, self.name, self.email, self.ip)  # omit password
 
 
-class UserSchema(ma.Schema):
-    class Meta:
-        fields = ('name', 'password', 'email', 'ip')
-
-
-user_schema = UserSchema()
-users_schema = UserSchema(many=True)
-
-
 class Active(db.Model):
     __table_name__ = 'Active'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -55,16 +46,7 @@ class Active(db.Model):
 
     def __repr__(self):
         return f"User('{self.id}', '{self.name}', '{self.ip}')"  # omit password
-
-
-class ActiveUserSchema(ma.Schema):
-    class Meta:
-        fields = ('name', 'ip')
-
-
-active_user_schema = ActiveUserSchema()
-active_users_schema = ActiveUserSchema(many=True)
-
+    
 
 class Call(db.Model):  # call other side
     __table_name__ = 'Call'
@@ -76,15 +58,6 @@ class Call(db.Model):  # call other side
     def __repr__(self):
         return f"User('{self.id}', '{self.src}', '{self.operation}', '{self.dst}')"
         #   return 'id:{} src:{} operation:{} dst:{}'.format(self.id, self.src, self.operation, self.dst)
-
-
-class CallSchema(ma.Schema):
-    class Meta:
-        fields = ('src', 'operation', 'dst')
-
-
-call_schema = CallSchema()
-calls_schema = CallSchema(many=True)
 
 
 def ip_in_Active(ip):
