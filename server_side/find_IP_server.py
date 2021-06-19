@@ -22,9 +22,6 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
 
-# https://flask-sqlalchemy.palletsprojects.com/en/2.x/models/
-# https://docs.sqlalchemy.org/en/13/core/constraints.html#unique-constraint
-# https://www.w3schools.com/sql/sql_unique.asp
 class User(db.Model):
     __table_name__ = 'User'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -35,7 +32,6 @@ class User(db.Model):
 
     def __repr__(self):
         return f"User('{self.id}', '{self.name}', '{self.email}', '{self.ip}')"  # omit password
-        #   return 'id:{} name:{} email{} ip:{}'.format(self.id, self.name, self.email, self.ip)  # omit password
 
 
 class Active(db.Model):
@@ -57,7 +53,6 @@ class Call(db.Model):  # call other side
 
     def __repr__(self):
         return f"User('{self.id}', '{self.src}', '{self.operation}', '{self.dst}')"
-        #   return 'id:{} src:{} operation:{} dst:{}'.format(self.id, self.src, self.operation, self.dst)
 
 
 def ip_in_Active(ip):
@@ -271,9 +266,10 @@ if __name__ == '__main__':
     IPs = socket.gethostbyname(hostname)
     print(f'Server started!')
     print(f'IPv4 : {IPs}')
-    db.session.query(Call).delete()  # because if a client stopped the program while calling someone he is still
-    db.session.query(Active).delete()  # because if a client stopped the program while calling someone he is still
-    # calling according to the call table
+    db.session.query(Call).delete()
+    db.session.query(Active).delete()
     db.session.commit()
+    # if a client stopped the program while calling someone he is still in call and active table
+    # - only happens if the client stopped the program without clicking the X
     print("deleted prior information in Call table")
     app.run(debug=False, host='0.0.0.0', port=5000)  # debug=False- if I have any errors they won't come up
