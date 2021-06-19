@@ -2,7 +2,6 @@ import os
 from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_marshmallow import Marshmallow
-import netifaces
 import socket
 from sqlalchemy import Column, Integer, String
 
@@ -293,13 +292,12 @@ def check_connection():
 
 
 if __name__ == '__main__':
-    db.create_all()  # to create the tables
-    # finds server's IP address and returns it
+    #   db.create_all()  # to create the tables- not necessary because i already have the tables ready with information
+    # finds server's IP address
     hostname = socket.gethostname()
     IPs = socket.gethostbyname(hostname)
     print(f'Server started!')
     print(f'IPv4 : {IPs}')
-    print(f'hostname : {socket.gethostname()}')
     db.session.query(Call).delete()  # because if a client stopped the program while calling someone he is still
     db.session.query(Active).delete()  # because if a client stopped the program while calling someone he is still
     # calling according to the call table
