@@ -9,16 +9,6 @@ from sqlalchemy import Column, Integer, String
 
 # השרת ניגש למאגר המידע, שולף את המידע הרלוונטי ומחזיר למשתמש
 
-# finds server's IP address and returns it
-def ip4_addresses():
-    for iface in netifaces.interfaces():
-        iface_details = netifaces.ifaddresses(iface)
-        if netifaces.AF_INET in iface_details:
-            for ip_interfaces in iface_details[netifaces.AF_INET]:
-                for key, ip_add in ip_interfaces.items():
-                    if key == 'addr' and ip_add != '127.0.0.1':
-                        return ip_add
-
 
 project_dir = os.path.dirname(os.path.abspath(__file__))
 database_file = "sqlite:///{}".format(os.path.join(project_dir, "database.db"))  # /// is a relative path
@@ -33,6 +23,9 @@ db = SQLAlchemy(app)
 ma = Marshmallow(app)
 
 
+# https://flask-sqlalchemy.palletsprojects.com/en/2.x/models/
+# https://docs.sqlalchemy.org/en/13/core/constraints.html#unique-constraint
+# https://www.w3schools.com/sql/sql_unique.asp
 class User(db.Model):
     __table_name__ = 'User'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -42,7 +35,8 @@ class User(db.Model):
     ip = Column(String(32), nullable=False)
 
     def __repr__(self):
-        return f"User('{self.id}', '{self.name}', '{self.email}', '{self.ip}')"
+        return f"User('{self.id}', '{self.name}', '{self.email}', '{self.ip}')"  # omit password
+        #   return 'id:{} name:{} email{} ip:{}'.format(self.id, self.name, self.email, self.ip)  # omit password
 
 
 class UserSchema(ma.Schema):
@@ -61,7 +55,7 @@ class Active(db.Model):
     ip = Column(String(32), nullable=False)
 
     def __repr__(self):
-        return f"User('{self.id}', '{self.name}', '{self.ip}')"
+        return f"User('{self.id}', '{self.name}', '{self.ip}')"  # omit password
 
 
 class ActiveUserSchema(ma.Schema):
@@ -82,6 +76,7 @@ class Call(db.Model):  # call other side
 
     def __repr__(self):
         return f"User('{self.id}', '{self.src}', '{self.operation}', '{self.dst}')"
+        #   return 'id:{} src:{} operation:{} dst:{}'.format(self.id, self.src, self.operation, self.dst)
 
 
 class CallSchema(ma.Schema):
@@ -186,6 +181,7 @@ def login():
         if user_info:
             result = "True"
             user_info.ip = request.remote_addr  # updates the user's ip to it's current one
+            # db.session.commit()
             db.session.add(Active(name=user_name, ip=user_info.ip))
             db.session.commit()
         return jsonify(result)
@@ -297,8 +293,10 @@ def check_connection():
 
 
 if __name__ == '__main__':
-    # db.create_all()  # to create the tables- not necessary if database.db id downloaded
-    IPs = ip4_addresses()
+    db.create_all()  # to create the tables
+    # finds server's IP address and returns it
+    hostname = socket.gethostname()
+    IPs = socket.gethostbyname(hostname)
     print(f'Server started!')
     print(f'IPv4 : {IPs}')
     print(f'hostname : {socket.gethostname()}')
